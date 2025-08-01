@@ -43,7 +43,7 @@
       text-align: right;
       max-height: 200px;
       overflow-y: auto;
-      word-break: break-word;
+      white-space: pre-wrap;
     }
     .report-page {
       display: none;
@@ -53,7 +53,6 @@
       text-align: right;
       width: 80%;
       margin: auto;
-      white-space: pre-wrap;
     }
     .btn {
       padding: 10px 20px;
@@ -72,7 +71,6 @@
       background: #00c896;
       color: #fff;
       margin: 5px;
-      display: none;
     }
     .copy-btn:hover {
       background: #00e0a6;
@@ -91,15 +89,13 @@
   <h1>💰 قسم GoldCrypto</h1>
 
   <table>
-    <thead>
-      <tr>
-        <th>العملة</th>
-        <th>السعر الحالي (G)</th>
-        <th>الحد اليومي</th>
-        <th>إجمالي المشتريات (لكل الحسابات)</th>
-        <th>إجمالي المبيعات (لكل الحسابات)</th>
-      </tr>
-    </thead>
+    <tr>
+      <th>العملة</th>
+      <th>السعر الحالي (G)</th>
+      <th>الحد اليومي</th>
+      <th>المشتريات اليوم (لكل حساب)</th>
+      <th>المبيعات اليوم (لكل حساب)</th>
+    </tr>
     <tbody id="cryptoTable"></tbody>
   </table>
 
@@ -110,11 +106,11 @@
       <option value="buy">شراء</option>
       <option value="sell">بيع</option>
     </select>
-    <input type="number" id="amountInput" placeholder="الكمية" min="1" />
+    <input type="number" id="amountInput" placeholder="الكمية" />
     <input type="text" id="accountCode" placeholder="كود الحساب" />
     <button class="btn" onclick="addOperation()">إضافة العملية</button>
     <button class="btn" onclick="undoOperation()">↩️ تراجع عن آخر عملية</button>
-    <button class="copy-btn" id="copyOperationBtn" onclick="copyLastOperation()">📋 نسخ العملية الأخيرة</button>
+    <button id="copyOperationBtn" class="btn copy-btn" style="display:none" onclick="copyLastOperation()">📋 نسخ آخر عملية</button>
 
     <h2>📜 سجل العمليات</h2>
     <div id="log">لا توجد عمليات بعد.</div>
@@ -138,22 +134,21 @@
       { name: "Litecoin (LTC)", price: 300, dailyLimit: 2 },
     ];
 
-    const buyImpactPercent = 0.20; // 20%
-    const sellImpactPercent = 0.15; // 15%
+    const buyImpactPercent = 0.20; // 20% زيادة بعد الشراء
+    const sellImpactPercent = 0.15; // 15% نقصان بعد البيع
 
     const table = document.getElementById("cryptoTable");
     const logDiv = document.getElementById("log");
     const cryptoSelect = document.getElementById("cryptoSelect");
     const copyOperationBtn = document.getElementById("copyOperationBtn");
 
-    // البيانات لكل حساب: { bought: {coinName: qty}, sold: {coinName: qty}, logs: [] }
-    let accountsData = {};
+    // تخزين عمليات كل حساب (key = كود الحساب)
+    // bought, sold: مخزن المشتريات والمبيعات لكل عملة
+    const accountsData = {};
+    const operationHistory = [];
 
-    // قائمة العمليات التسلسلية (للتراجع)
-    let operationHistory = [];
     let lastOperationText = "";
 
-    // تهيئة قائمة العملات في الـ select
     cryptos.forEach((c, i) => {
       let opt = document.createElement("option");
       opt.value = i;
@@ -164,16 +159,14 @@
     function renderTable() {
       table.innerHTML = "";
       cryptos.forEach((crypto) => {
-        // حساب إجمالي المشتريات والبيع لكل العملات من كل الحسابات
+        // نحصي مجموع المشتريات والمبيعات لكل العملة عبر جميع الحسابات
         let totalBought = 0;
         let totalSold = 0;
-        for (const acc in accountsData) {
-          if (accountsData[acc].bought && accountsData[acc].bought[crypto.name]) {
-            totalBought += accountsData[acc].bought[crypto.name];
-          }
-          if (accountsData[acc].sold && accountsData[acc].sold[crypto.name]) {
-            totalSold += accountsData[acc].sold[crypto.name];
-          }
+        for (const code in accountsData) {
+          if (accountsData[code].bought && accountsData[code].bought[crypto.name])
+            totalBought += accountsData[code].bought[crypto.name];
+          if (accountsData[code].sold && accountsData[code].sold[crypto.name])
+            totalSold += accountsData[code].sold[crypto.name];
         }
 
         const row = document.createElement("tr");
@@ -205,44 +198,62 @@
       }
 
       if (!accountsData[code]) {
-        accountsData[code] = { bought: {}, sold: {}, logs: [] };
+        accountsData[code] = { bought: {}, sold: {} };
+      }
+      if (!accountsData[code].bought[c.name]) accountsData[code].bought[c.name] = 0;
+      if (!accountsData[code].sold[c.name]) accountsData[code].sold[c.name] = 0;
+
+      // تحقق من الحد اليومي حسب الحساب
+      if (type === "buy" && accountsData[code].bought[c.name] + amount > c.dailyLimit) {
+        alert("❌ تجاوزت الحد اليومي لهذه العملة لهذا الحساب");
+        return;
       }
 
-      let boughtCount = accountsData[code].bought[c.name] || 0;
-      let soldCount = accountsData[code].sold[c.name] || 0;
+      const oldPrice = c.price;
 
+      // سجل العملية بالنص مع السعر القديم
+      let opText;
       if (type === "buy") {
-        if (boughtCount + amount > c.dailyLimit) {
-          alert(`❌ تجاوزت الحد اليومي للشراء (${c.dailyLimit}) لهذه العملة`);
-          return;
-        }
-        accountsData[code].bought[c.name] = boughtCount + amount;
-        // تعديل السعر بعد تسجيل الشراء
+        accountsData[code].bought[c.name] += amount;
+        opText = `✅ شراء ${amount} ${c.name} بسعر ${oldPrice.toFixed(2)}G (كود: ${code})`;
+      } else {
+        accountsData[code].sold[c.name] += amount;
+        opText = `💱 بيع ${amount} ${c.name} بسعر ${oldPrice.toFixed(2)}G (كود: ${code})`;
+      }
+
+      operationHistory.push({
+        code,
+        type,
+        coinName: c.name,
+        amount,
+        priceBefore: oldPrice,
+        text: opText,
+      });
+
+      // تحديث السعر بعد تسجيل العملية
+      if (type === "buy") {
         c.price *= 1 + buyImpactPercent;
       } else {
-        // لا يمكن بيع أكثر مما اشتراه الشخص
-        if (soldCount + amount > boughtCount) {
-          alert(`❌ لا يمكنك بيع أكثر مما اشتريت من هذه العملة`);
-          return;
-        }
-        accountsData[code].sold[c.name] = soldCount + amount;
-        // تعديل السعر بعد تسجيل البيع
         c.price *= 1 - sellImpactPercent;
       }
-
-      const opText = `${type === "buy" ? "✅ شراء" : "💱 بيع"} ${amount} ${c.name} بسعر ${c.price.toFixed(
-        2
-      )}G (كود: ${code})`;
-      accountsData[code].logs.push(opText);
-      operationHistory.push({ code, type, coinName: c.name, amount, priceAfter: c.price, text: opText });
 
       updateLog();
       renderTable();
 
       document.getElementById("amountInput").value = "";
       document.getElementById("accountCode").value = "";
+
       lastOperationText = opText;
       copyOperationBtn.style.display = "inline-block";
+    }
+
+    function updateLog() {
+      if (operationHistory.length) {
+        logDiv.innerHTML = operationHistory.map((o) => o.text).join("<br>");
+      } else {
+        logDiv.innerHTML = "لا توجد عمليات بعد.";
+        copyOperationBtn.style.display = "none";
+      }
     }
 
     function undoOperation() {
@@ -251,43 +262,24 @@
         return;
       }
       const lastOp = operationHistory.pop();
-      const { code, type, coinName, amount, priceAfter, text } = lastOp;
-      const c = cryptos.find((crypto) => crypto.name === coinName);
+      const c = cryptos.find((x) => x.name === lastOp.coinName);
+      const code = lastOp.code;
 
-      // عكس تأثير السعر
-      if (type === "buy") {
-        c.price = c.price / (1 + buyImpactPercent);
-        accountsData[code].bought[coinName] -= amount;
-        if (accountsData[code].bought[coinName] <= 0) delete accountsData[code].bought[coinName];
+      // إعادة السعر للسعر قبل العملية
+      c.price = lastOp.priceBefore;
+
+      // تعديل حسابات الشراء والبيع حسب العملية
+      if (lastOp.type === "buy") {
+        accountsData[code].bought[c.name] -= lastOp.amount;
       } else {
-        c.price = c.price / (1 - sellImpactPercent);
-        accountsData[code].sold[coinName] -= amount;
-        if (accountsData[code].sold[coinName] <= 0) delete accountsData[code].sold[coinName];
+        accountsData[code].sold[c.name] -= lastOp.amount;
       }
-
-      // إزالة العملية من سجل الحساب
-      const logIndex = accountsData[code].logs.lastIndexOf(text);
-      if (logIndex > -1) accountsData[code].logs.splice(logIndex, 1);
 
       updateLog();
       renderTable();
       alert("↩️ تم التراجع عن آخر عملية");
 
-      // تحديث زر نسخ العملية إذا لم تعد توجد عمليات
-      if (operationHistory.length === 0) {
-        copyOperationBtn.style.display = "none";
-        lastOperationText = "";
-      } else {
-        lastOperationText = operationHistory[operationHistory.length - 1].text;
-      }
-    }
-
-    function updateLog() {
-      if (operationHistory.length === 0) {
-        logDiv.innerHTML = "لا توجد عمليات بعد.";
-      } else {
-        logDiv.innerHTML = operationHistory.map((o) => o.text).join("<br>");
-      }
+      if (operationHistory.length === 0) copyOperationBtn.style.display = "none";
     }
 
     function showReport() {
@@ -296,22 +288,18 @@
       document.querySelector("h1").style.display = "none";
       document.getElementById("reportPage").style.display = "block";
 
+      // حساب إجمالي الشراء والبيع لكل العملات بالسعر الحالي
       let totalBuy = 0;
       let totalSell = 0;
-
       cryptos.forEach((crypto) => {
-        let boughtSum = 0;
-        let soldSum = 0;
-        for (const acc in accountsData) {
-          if (accountsData[acc].bought && accountsData[acc].bought[crypto.name]) {
-            boughtSum += accountsData[acc].bought[crypto.name] * crypto.price;
-          }
-          if (accountsData[acc].sold && accountsData[acc].sold[crypto.name]) {
-            soldSum += accountsData[acc].sold[crypto.name] * crypto.price;
-          }
+        let boughtSum = 0,
+          soldSum = 0;
+        for (const code in accountsData) {
+          boughtSum += accountsData[code].bought[crypto.name] || 0;
+          soldSum += accountsData[code].sold[crypto.name] || 0;
         }
-        totalBuy += boughtSum;
-        totalSell += soldSum;
+        totalBuy += boughtSum * crypto.price;
+        totalSell += soldSum * crypto.price;
       });
 
       const today = new Date().toISOString().slice(0, 10);
@@ -325,7 +313,11 @@
 💠 إجمالي عمليات البيع: ${totalSell.toFixed(2)} G
 
 📌 عدد العمليات: ${operationHistory.length}
-${operationHistory.length ? operationHistory.map(o => "• " + o.text).join("\n") : "- لا توجد عمليات"}
+${
+  operationHistory.length
+    ? operationHistory.map((o) => "• " + o.text).join("\n")
+    : "- لا توجد عمليات"
+}
 
 📄 الحالة العامة: مستقرة 🏷️
 
@@ -349,12 +341,10 @@ ${operationHistory.length ? operationHistory.map(o => "• " + o.text).join("\n"
     }
 
     function copyLastOperation() {
-      if (!lastOperationText) {
-        alert("لا توجد عملية لنسخها");
-        return;
+      if (lastOperationText) {
+        navigator.clipboard.writeText(lastOperationText);
+        alert("تم نسخ العملية ✅");
       }
-      navigator.clipboard.writeText(lastOperationText);
-      alert("تم نسخ العملية الأخيرة ✅");
     }
 
     renderTable();
