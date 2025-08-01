@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>قسم GoldCrypto</title>
   <style>
     body {
@@ -10,31 +10,381 @@
       font-family: "Cairo", sans-serif;
       text-align: center;
       padding: 20px;
+      min-height: 100vh;
+      margin: 0;
     }
-    h1 { color: #ffcc00; }
+    h1, h2 {
+      color: #ffcc00;
+      margin-bottom: 10px;
+    }
     table {
-      width: 80%; margin: 20px auto;
+      width: 90%;
+      margin: 20px auto;
       border-collapse: collapse;
       background: #2f2f47;
-      border-radius: 12px; overflow: hidden;
+      border-radius: 12px;
+      overflow: hidden;
+      color: #fff;
     }
-    th, td { padding: 12px; border-bottom: 1px solid #444; }
-    th { background-color: #ffcc00; color: #000; }
-    .operations {
-      margin: 20px auto; width: 80%;
-      background: #2f2f47; padding: 20px; border-radius: 12px;
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #444;
     }
-    #log { margin-top: 20px; text-align: right; max-height: 200px; overflow-y: auto; }
-    .report-page {
-      display: none; background: #1e1e2f;
-      padding: 20px; border-radius: 12px;
-      text-align: right; width: 80%; margin: auto;
+    th {
+      background-color: #ffcc00;
+      color: #000;
     }
-    .btn {
-      padding: 10px 20px; margin: 10px;
-      background: #ffcc00; color: #000;
-      border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
+    button {
+      padding: 10px 20px;
+      margin: 10px 5px;
+      background: #ffcc00;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s ease;
     }
+    button:hover {
+      background: #ffd633;
+    }
+    input, select {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 6px;
+      border: none;
+      text-align: center;
+      font-size: 1rem;
+    }
+    #log {
+      margin-top: 15px;
+      max-height: 150px;
+      overflow-y: auto;
+      text-align: right;
+      background: #1e1e2f;
+      padding: 10px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: #ddd;
+    }
+    #loginSection, #adminSection, #customerSection, #reportSection {
+      max-width: 900px;
+      margin: auto;
+    }
+    #reportSection {
+      white-space: pre-wrap;
+      background: #222;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 20px;
+      color: #ccc;
+      display: none;
+      text-align: right;
+      font-family: monospace;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="customerSection">
+    <h1>💰 قسم GoldCrypto - الأسعار الحالية</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>العملة</th>
+          <th>السعر الحالي (G)</th>
+          <th>الحد اليومي</th>
+          <th>المشتريات اليوم</th>
+          <th>المبيعات اليوم</th>
+        </tr>
+      </thead>
+      <tbody id="cryptoTable"></tbody>
+    </table>
+    <button onclick="showLogin()">🔐 دخول الإدارة</button>
+  </div>
+
+  <div id="loginSection" style="display:none;">
+    <h2>🔐 تسجيل دخول الإدارة</h2>
+    <input type="password" id="adminCodeInput" placeholder="أدخل رمز الدخول" />
+    <button onclick="login()">دخول</button>
+    <button onclick="cancelLogin()">إلغاء</button>
+    <p id="loginMessage" style="color:#ff6666;"></p>
+  </div>
+
+  <div id="adminSection" style="display:none; text-align:right;">
+    <h1>⚙️ إدارة قسم GoldCrypto</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>العملة</th>
+          <th>السعر الحالي (G)</th>
+          <th>الحد اليومي</th>
+          <th>المشتريات اليوم</th>
+          <th>المبيعات اليوم</th>
+        </tr>
+      </thead>
+      <tbody id="adminCryptoTable"></tbody>
+    </table>
+
+    <div style="margin: 20px auto; max-width: 700px; text-align: center;">
+      <select id="cryptoSelect"></select>
+      <select id="typeSelect">
+        <option value="buy">شراء</option>
+        <option value="sell">بيع</option>
+      </select>
+      <input type="number" id="amountInput" placeholder="الكمية" min="1" />
+      <input type="text" id="accountCode" placeholder="كود الحساب" />
+      <button onclick="addOperation()">إضافة العملية</button>
+      <button onclick="undoOperation()">↩️ تراجع عن آخر عملية</button>
+      <button onclick="logout()">خروج</button>
+      <button onclick="resetPrices()">🔄 إعادة تعيين الأسعار</button>
+    </div>
+
+    <h2>سجل العمليات</h2>
+    <div id="log"></div>
+
+    <button onclick="showReport()">📝 طلب التقرير اليومي</button>
+  </div>
+
+  <div id="reportSection"></div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script>
+    // إعداد Firebase - استبدل بالقيم الخاصة بمشروعك
+    const firebaseConfig = {
+      apiKey: "API_KEY_HERE",
+      authDomain: "PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://PROJECT_ID-default-rtdb.firebaseio.com",
+      projectId: "PROJECT_ID",
+      storageBucket: "PROJECT_ID.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const adminPassword = "1234567890";
+
+    const initialCryptos = {
+      BTC: { name: "Bitcoin (BTC)", price: 1000, dailyLimit: 1, bought: 0, sold: 0 },
+      DASH: { name: "DASH", price: 250, dailyLimit: 3, bought: 0, sold: 0 },
+      USDT: { name: "Tether (USDT)", price: 100, dailyLimit: 5, bought: 0, sold: 0 },
+      XMR: { name: "Monero (XMR)", price: 600, dailyLimit: 1, bought: 0, sold: 0 },
+      NANO: { name: "Nano (NANO)", price: 120, dailyLimit: 10, bought: 0, sold: 0 },
+      LTC: { name: "Litecoin (LTC)", price: 300, dailyLimit: 2, bought: 0, sold: 0 }
+    };
+
+    const buyImpact = 0.02;   // +2%
+    const sellImpact = 0.015; // -1.5%
+
+    let currentCryptos = {}; 
+    let operations = []; 
+
+    const customerSection = document.getElementById("customerSection");
+    const loginSection = document.getElementById("loginSection");
+    const adminSection = document.getElementById("adminSection");
+    const reportSection = document.getElementById("reportSection");
+    const cryptoTable = document.getElementById("cryptoTable");
+    const adminCryptoTable = document.getElementById("adminCryptoTable");
+    const cryptoSelect = document.getElementById("cryptoSelect");
+    const typeSelect = document.getElementById("typeSelect");
+    const amountInput = document.getElementById("amountInput");
+    const accountCodeInput = document.getElementById("accountCode");
+    const logDiv = document.getElementById("log");
+    const loginMessage = document.getElementById("loginMessage");
+
+    function renderTables() {
+      cryptoTable.innerHTML = "";
+      adminCryptoTable.innerHTML = "";
+      cryptoSelect.innerHTML = "";
+
+      for (let key in currentCryptos) {
+        const c = currentCryptos[key];
+
+        cryptoTable.innerHTML += `
+          <tr>
+            <td>${c.name}</td>
+            <td>${c.price.toFixed(2)}</td>
+            <td>${c.dailyLimit}</td>
+            <td>${c.bought}</td>
+            <td>${c.sold}</td>
+          </tr>
+        `;
+
+        adminCryptoTable.innerHTML += `
+          <tr>
+            <td>${c.name}</td>
+            <td>${c.price.toFixed(2)}</td>
+            <td>${c.dailyLimit}</td>
+            <td>${c.bought}</td>
+            <td>${c.sold}</td>
+          </tr>
+        `;
+
+        cryptoSelect.innerHTML += `<option value="${key}">${c.name}</option>`;
+      }
+    }
+
+    function loadCryptos() {
+      db.ref("cryptos").once("value").then(snapshot => {
+        if (snapshot.exists()) {
+          currentCryptos = snapshot.val();
+        } else {
+          currentCryptos = JSON.parse(JSON.stringify(initialCryptos));
+          db.ref("cryptos").set(currentCryptos);
+        }
+        renderTables();
+      });
+
+      db.ref("operations").on("value", snapshot => {
+        operations = snapshot.val() || [];
+        logDiv.innerHTML = operations.map(op => JSON.stringify(op)).join("\n");
+      });
+    }
+
+    function showLogin() {
+      customerSection.style.display = "none";
+      loginSection.style.display = "block";
+    }
+
+    function cancelLogin() {
+      loginSection.style.display = "none";
+      customerSection.style.display = "block";
+    }
+
+    function login() {
+      const code = document.getElementById("adminCodeInput").value;
+      if (code === adminPassword) {
+        loginSection.style.display = "none";
+        adminSection.style.display = "block";
+      } else {
+        loginMessage.textContent = "رمز الدخول غير صحيح!";
+      }
+    }
+
+    function logout() {
+      adminSection.style.display = "none";
+      customerSection.style.display = "block";
+    }
+
+    function addOperation() {
+      const cryptoKey = cryptoSelect.value;
+      const type = typeSelect.value;
+      const amount = parseInt(amountInput.value);
+      const accountCode = accountCodeInput.value.trim();
+
+      if (!amount || amount <= 0 || !accountCode) {
+        alert("الرجاء إدخال الكمية وكود الحساب بشكل صحيح.");
+        return;
+      }
+
+      const c = currentCryptos[cryptoKey];
+
+      // التحقق من الحد اليومي
+      if (type === "buy" && c.bought + amount > c.dailyLimit) {
+        alert("تجاوزت الحد اليومي لهذه العملة!");
+        return;
+      }
+
+      // تعديل الأسعار والعدادات
+      if (type === "buy") {
+        c.price *= (1 + buyImpact);
+        c.bought += amount;
+      } else {
+        c.price *= (1 - sellImpact);
+        c.sold += amount;
+      }
+
+      const op = {
+        time: new Date().toLocaleString("ar-EG"),
+        type,
+        crypto: cryptoKey,
+        amount,
+        price: c.price,
+        account: accountCode
+      };
+      operations.push(op);
+
+      db.ref("cryptos").set(currentCryptos);
+      db.ref("operations").set(operations);
+
+      renderTables();
+      amountInput.value = "";
+      accountCodeInput.value = "";
+    }
+
+    function undoOperation() {
+      if (operations.length === 0) {
+        alert("لا توجد عمليات للتراجع عنها.");
+        return;
+      }
+
+      const lastOp = operations.pop();
+      const c = currentCryptos[lastOp.crypto];
+
+      // عكس العملية
+      if (lastOp.type === "buy") {
+        c.bought -= lastOp.amount;
+        c.price /= (1 + buyImpact);
+      } else {
+        c.sold -= lastOp.amount;
+        c.price /= (1 - sellImpact);
+      }
+
+      db.ref("cryptos").set(currentCryptos);
+      db.ref("operations").set(operations);
+      renderTables();
+    }
+
+    function resetPrices() {
+      if (!confirm("هل تريد فعلاً إعادة تعيين الأسعار والعدادات اليومية؟")) return;
+
+      currentCryptos = JSON.parse(JSON.stringify(initialCryptos));
+      operations = [];
+      db.ref("cryptos").set(currentCryptos);
+      db.ref("operations").set([]);
+      renderTables();
+      logDiv.textContent = "تم إعادة تعيين الأسعار والعدادات اليومية.";
+    }
+
+    function showReport() {
+      let totalBuy = 0;
+      let totalSell = 0;
+      let lines = [];
+
+      lines.push("🤎✨ قسم GoldCrypto ✨🧸");
+      lines.push("تقرير اليوم:");
+      lines.push("⚖️ " + new Date().toLocaleDateString("ar-EG") + " ⚖️\n");
+
+      for (let op of operations) {
+        const c = currentCryptos[op.crypto];
+        const value = op.amount * c.price;
+        if (op.type === "buy") {
+          totalBuy += value;
+        } else {
+          totalSell += value;
+        }
+        lines.push(`${op.type === "buy" ? "شراء" : "بيع"}: ${op.amount} ${op.crypto} (${value.toFixed(2)}G)`);
+      }
+
+      lines.push("\n💠إجمالي الشراء: " + totalBuy.toFixed(2) + "G");
+      lines.push("💠إجمالي البيع: " + totalSell.toFixed(2) + "G");
+      lines.push("\n👨‍💻 كتب التقرير: المساعد الآلي 🤖");
+
+      reportSection.style.display = "block";
+      reportSection.textContent = lines.join("\n");
+    }
+
+    loadCryptos();
+  </script>
+</body>
+</html>    }
     .btn:hover { background: #ffd633; }
     .copy-btn { background: #00c896; color: #fff; margin: 5px; }
     .copy-btn:hover { background: #00e0a6; }
