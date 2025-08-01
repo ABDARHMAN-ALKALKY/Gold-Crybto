@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>قسم GoldCrypto</title>
   <style>
     body {
@@ -65,8 +65,8 @@
       <option value="buy">شراء</option>
       <option value="sell">بيع</option>
     </select>
-    <input type="number" id="amountInput" placeholder="الكمية">
-    <input type="text" id="accountCode" placeholder="كود الحساب">
+    <input type="number" id="amountInput" placeholder="الكمية" />
+    <input type="text" id="accountCode" placeholder="كود الحساب" />
     <button class="btn" onclick="addOperation()">إضافة العملية</button>
     <button class="btn" onclick="undoOperation()">↩️ تراجع عن آخر عملية</button>
 
@@ -82,7 +82,24 @@
     <button class="btn" onclick="hideReport()">🔙 رجوع</button>
   </div>
 
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
   <script>
+    // 🔹 إعداد Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-demo",
+      authDomain: "goldcrypto-demo.firebaseapp.com",
+      databaseURL: "https://goldcrypto-demo.firebaseio.com",
+      projectId: "goldcrypto-demo",
+      storageBucket: "goldcrypto-demo.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:demo"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     const cryptos = [
       {name: "Bitcoin (BTC)", price: 1000, dailyLimit: 1, bought: 0, sold: 0},
       {name: "DASH", price: 250, dailyLimit: 3, bought: 0, sold: 0},
@@ -142,13 +159,14 @@
       if (type === "buy") {
         c.bought += amount;
         c.price *= (1 + buyImpact);
-        operations.push({text:`✅ شراء ${amount} ${c.name} بسعر ${c.price.toFixed(2)}G`, type, index, amount, oldPrice});
+        operations.push({text:`✅ شراء ${amount} ${c.name} بسعر ${c.price.toFixed(2)}G`, type, index, amount, oldPrice, code, time: new Date().toLocaleString()});
       } else {
         c.sold += amount;
         c.price *= (1 - sellImpact);
-        operations.push({text:`💱 بيع ${amount} ${c.name} بسعر ${c.price.toFixed(2)}G`, type, index, amount, oldPrice});
+        operations.push({text:`💱 بيع ${amount} ${c.name} بسعر ${c.price.toFixed(2)}G`, type, index, amount, oldPrice, code, time: new Date().toLocaleString()});
       }
 
+      updateDatabase();
       logDiv.innerHTML = operations.map(o=>o.text).join("<br>");
       renderTable();
       document.getElementById("amountInput").value = "";
@@ -164,9 +182,15 @@
       if (lastOp.type === "buy") c.bought -= lastOp.amount;
       else c.sold -= lastOp.amount;
 
+      updateDatabase();
       logDiv.innerHTML = operations.length ? operations.map(o=>o.text).join("<br>") : "لا توجد عمليات بعد.";
       renderTable();
       alert("↩️ تم التراجع عن آخر عملية");
+    }
+
+    function updateDatabase() {
+      db.ref("cryptos").set(cryptos);
+      db.ref("operations").set(operations);
     }
 
     function showReport() {
@@ -211,6 +235,32 @@ ${operations.length ? operations.map(o=>"• "+o.text).join("\n") : "- لا تو
       alert("تم نسخ التقرير ✅");
     }
 
+    // تحميل البيانات من Firebase عند بدء الصفحة
+    function loadData() {
+      db.ref("cryptos").once("value").then(snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          for(let i=0; i<cryptos.length; i++) {
+            if(data[i]) {
+              cryptos[i].price = data[i].price;
+              cryptos[i].bought = data[i].bought;
+              cryptos[i].sold = data[i].sold;
+            }
+          }
+          renderTable();
+        }
+      });
+
+      db.ref("operations").once("value").then(snapshot => {
+        const ops = snapshot.val();
+        if (ops) {
+          operations = ops;
+          logDiv.innerHTML = operations.length ? operations.map(o=>o.text).join("<br>") : "لا توجد عمليات بعد.";
+        }
+      });
+    }
+
+    loadData();
     renderTable();
   </script>
 </body>
