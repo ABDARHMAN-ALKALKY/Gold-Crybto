@@ -159,6 +159,152 @@
     }
 
     function generateReport() {
+      let totalBuy = 0;
+      let report = `🤖 تقرير قسم GoldCrypto\n📅 ${new Date().toLocaleDateString('ar-EG')}\n\n`;
+      for (let key in currentCryptos) {
+        const c = currentCryptos[key];
+        report += `• ${c.name} | السعر: ${c.price}G | المباعة اليوم: ${c.sold}/${c.limit}\n`;
+        totalBuy += c.sold * c.price;
+      }
+      report += `\nإجمالي المبيعات: ${totalBuy}G\nعدد العمليات: ${operations.length}\n\nتمت كتابة التقرير بواسطة: المساعد الآلي 🤖`;
+      reportDiv.textContent = report;
+      reportDiv.classList.remove("hidden");
+    }
+
+    // تحميل البيانات من Firebase أو إنشاء بيانات أولية
+    db.ref("cryptos").once("value").then(snapshot => {
+      currentCryptos = snapshot.val() || JSON.parse(JSON.stringify(initialCryptos));
+      db.ref("cryptos").set(currentCryptos); // حفظ إذا كانت جديدة
+      renderTables();
+    });
+    db.ref("operations").once("value").then(snapshot => { operations = snapshot.val() || []; });
+  </script>
+</body>
+</html>    <button class="undo" onclick="undoLastOperation()">تراجع عن آخر عملية</button>
+    <button onclick="resetPrices()">إعادة تعيين الأسعار والعدادات اليومية</button>
+    <button onclick="generateReport()">توليد التقرير اليومي</button>
+    <button onclick="logoutAdmin()">تسجيل الخروج</button>
+    <div id="log"></div>
+    <div id="report" class="hidden"></div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script>
+    // إعداد Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-demo",
+      authDomain: "goldcrypto-demo.firebaseapp.com",
+      databaseURL: "https://goldcrypto-demo.firebaseio.com",
+      projectId: "goldcrypto-demo",
+      storageBucket: "goldcrypto-demo.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:demo"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const initialCryptos = {
+      BTC: { name: "Bitcoin", price: 1000, limit: 1, sold: 0 },
+      DASH: { name: "DASH", price: 250, limit: 3, sold: 0 },
+      USDT: { name: "Tether", price: 100, limit: 5, sold: 0 },
+      XMR: { name: "Monero", price: 600, limit: 1, sold: 0 },
+      NANO: { name: "Nano", price: 120, limit: 10, sold: 0 },
+      LTC: { name: "Litecoin", price: 300, limit: 2, sold: 0 }
+    };
+
+    let currentCryptos = {};
+    let operations = [];
+    let lastOperation = null;
+
+    const cryptoTable = document.getElementById("cryptoTable");
+    const adminTable = document.getElementById("adminTable");
+    const reportDiv = document.getElementById("report");
+    const logDiv = document.getElementById("log");
+
+    const adminPassword = "TECNO LD7";
+
+    function renderTables() {
+      cryptoTable.innerHTML = "<tr><th>العملة</th><th>السعر (G)</th><th>الحد اليومي</th><th>المباعة اليوم</th></tr>";
+      adminTable.innerHTML = "<tr><th>العملة</th><th>السعر الحالي</th><th>المباعة اليوم</th><th>شراء</th><th>بيع</th></tr>";
+      for (let key in currentCryptos) {
+        const c = currentCryptos[key];
+        cryptoTable.innerHTML += `<tr><td>${c.name}</td><td>${c.price}</td><td>${c.limit}</td><td>${c.sold}</td></tr>`;
+        adminTable.innerHTML += `
+          <tr>
+            <td>${c.name}</td>
+            <td>${c.price}</td>
+            <td>${c.sold}/${c.limit}</td>
+            <td><button class='buy' onclick="makeOperation('${key}','buy')">شراء</button></td>
+            <td><button class='sell' onclick="makeOperation('${key}','sell')">بيع</button></td>
+          </tr>
+        `;
+      }
+    }
+
+    function makeOperation(coin, type) {
+      const c = currentCryptos[coin];
+      if (type === "buy") {
+        if (c.sold >= c.limit) { alert("❌ تجاوزت الحد اليومي!"); return; }
+        c.sold++;
+        c.price += Math.round(c.price * 0.02);
+      } else {
+        if (c.sold <= 0) { alert("❌ لا توجد عملات للبيع!"); return; }
+        c.sold--;
+        c.price -= Math.round(c.price * 0.02);
+        if (c.price < 1) c.price = 1;
+      }
+      lastOperation = { coin, type };
+      operations.push({ coin, type, time: new Date().toLocaleString('ar-EG') });
+      db.ref("cryptos").set(currentCryptos);
+      db.ref("operations").set(operations);
+      renderTables();
+    }
+
+    function undoLastOperation() {
+      if (!lastOperation) { alert("لا توجد عملية للتراجع عنها."); return; }
+      const { coin, type } = lastOperation;
+      if (type === "buy") {
+        currentCryptos[coin].sold--;
+        currentCryptos[coin].price -= Math.round(currentCryptos[coin].price * 0.02);
+      } else {
+        currentCryptos[coin].sold++;
+        currentCryptos[coin].price += Math.round(currentCryptos[coin].price * 0.02);
+      }
+      operations.pop();
+      lastOperation = null;
+      db.ref("cryptos").set(currentCryptos);
+      db.ref("operations").set(operations);
+      renderTables();
+    }
+
+    function loginAdmin() {
+      const pwd = prompt("أدخل رمز الإدارة:");
+      if (pwd === adminPassword) {
+        document.getElementById("publicView").classList.add("hidden");
+        document.getElementById("adminView").classList.remove("hidden");
+      } else alert("❌ رمز خاطئ");
+    }
+
+    function logoutAdmin() {
+      document.getElementById("adminView").classList.add("hidden");
+      document.getElementById("publicView").classList.remove("hidden");
+    }
+
+    function resetPrices() {
+      const code = prompt("أدخل رمز السوفتوير لإعادة التعيين:");
+      if (code !== "TECNO LI7") { alert("❌ رمز السوفتوير غير صحيح!"); return; }
+      currentCryptos = JSON.parse(JSON.stringify(initialCryptos));
+      operations = [];
+      lastOperation = null;
+      db.ref("cryptos").set(currentCryptos);
+      db.ref("operations").set([]);
+      renderTables();
+      logDiv.textContent = "✅ تم إعادة تعيين الأسعار والعدادات اليومية.";
+    }
+
+    function generateReport() {
       let totalBuy = 0, totalSell = 0;
       let report = `🤖 تقرير قسم GoldCrypto\n📅 ${new Date().toLocaleDateString('ar-EG')}\n\n`;
       for (let key in currentCryptos) {
