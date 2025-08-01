@@ -43,12 +43,7 @@
       text-align: right;
       max-height: 200px;
       overflow-y: auto;
-      background: #1e1e2f;
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 14px;
-      color: #eee;
-      user-select: text;
+      word-break: break-word;
     }
     .report-page {
       display: none;
@@ -59,20 +54,16 @@
       width: 80%;
       margin: auto;
       white-space: pre-wrap;
-      font-family: monospace;
-      font-size: 14px;
-      color: #f5f5f5;
     }
     .btn {
       padding: 10px 20px;
-      margin: 10px 5px 10px 5px;
+      margin: 10px;
       background: #ffcc00;
       color: #000;
       border: none;
       border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
-      transition: background 0.3s ease;
     }
     .btn:hover {
       background: #ffd633;
@@ -92,21 +83,41 @@
       border-radius: 6px;
       border: none;
       text-align: center;
-      font-size: 14px;
     }
-    #adminSection {
-      margin-top: 20px;
-      background: #2f2f47;
-      border-radius: 12px;
-      padding: 15px;
+    #adminPanel {
+      display: none;
+      margin: 20px auto;
       width: 80%;
-      margin-left: auto;
-      margin-right: auto;
+      background: #2f2f47;
+      padding: 20px;
+      border-radius: 12px;
       text-align: center;
+      color: #ffcc00;
     }
-    #adminSection input {
-      width: 150px;
+    #adminPanel input[type="password"] {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      text-align: center;
+      margin-right: 10px;
+      width: 200px;
+    }
+    #adminOptions {
+      margin-top: 10px;
+      display: none;
+    }
+    #adminOptions button {
+      margin: 5px;
+      background: #ffcc00;
+      color: #000;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
       font-weight: bold;
+    }
+    #adminOptions button:hover {
+      background: #ffd633;
     }
   </style>
 </head>
@@ -119,8 +130,8 @@
         <th>العملة</th>
         <th>السعر الحالي (G)</th>
         <th>الحد اليومي لكل حساب</th>
-        <th>المشتريات اليوم (حسب الحساب)</th>
-        <th>المبيعات اليوم (حسب الحساب)</th>
+        <th>المشتريات اليوم</th>
+        <th>المبيعات اليوم</th>
       </tr>
     </thead>
     <tbody id="cryptoTable"></tbody>
@@ -133,10 +144,9 @@
       <option value="buy">شراء</option>
       <option value="sell">بيع</option>
     </select>
-    <input type="number" id="amountInput" placeholder="الكمية" />
+    <input type="number" id="amountInput" placeholder="الكمية" min="1" />
     <input type="text" id="accountCode" placeholder="كود الحساب" />
     <button class="btn" onclick="addOperation()">إضافة العملية</button>
-    <button class="btn" id="copyLastOpBtn" style="display:none;" onclick="copyLastOperation()">نسخ آخر عملية</button>
     <button class="btn" onclick="undoOperation()">↩️ تراجع عن آخر عملية</button>
 
     <h2>📜 سجل العمليات</h2>
@@ -151,45 +161,45 @@
     <button class="btn" onclick="hideReport()">🔙 رجوع</button>
   </div>
 
-  <div id="adminSection">
-    <input
-      type="password"
-      id="adminPasswordInput"
-      placeholder="أدخل كلمة السر للإدارة"
-      autocomplete="off"
-    />
+  <div id="adminPanel">
+    <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور للإدارة" />
     <button class="btn" onclick="checkAdminPassword()">دخول الإدارة</button>
-    <div id="adminControls" style="display:none; margin-top:15px;">
-      <button class="btn" onclick="resetPrices()">إعادة تعيين الأسعار</button>
-      <button class="btn" onclick="resetReport()">إعادة تعيين التقرير والعمليات</button>
-      <button class="btn" onclick="logoutAdmin()">تسجيل الخروج</button>
-      <div id="adminMsg" style="color:#ffcc00; margin-top:10px;"></div>
+    <div id="adminOptions">
+      <button onclick="resetPrices()">إعادة تعيين الأسعار</button>
+      <button onclick="resetOperations()">إعادة تعيين سجل العمليات</button>
+      <button onclick="logoutAdmin()">خروج من الإدارة</button>
+      <div id="adminLog" style="margin-top:10px; color:#0f0;"></div>
     </div>
   </div>
 
   <script>
     const cryptos = [
-      { name: "Bitcoin (BTC)", price: 1000, dailyLimit: 1 },
-      { name: "DASH", price: 250, dailyLimit: 3 },
-      { name: "Tether (USDT)", price: 100, dailyLimit: 5 },
-      { name: "Monero (XMR)", price: 600, dailyLimit: 1 },
-      { name: "Nano (NANO)", price: 120, dailyLimit: 10 },
-      { name: "Litecoin (LTC)", price: 300, dailyLimit: 2 },
+      { name: "Bitcoin (BTC)", price: 1000, dailyLimit: 1, bought: {}, sold: {} },
+      { name: "DASH", price: 250, dailyLimit: 3, bought: {}, sold: {} },
+      { name: "Tether (USDT)", price: 100, dailyLimit: 5, bought: {}, sold: {} },
+      { name: "Monero (XMR)", price: 600, dailyLimit: 1, bought: {}, sold: {} },
+      { name: "Nano (NANO)", price: 120, dailyLimit: 10, bought: {}, sold: {} },
+      { name: "Litecoin (LTC)", price: 300, dailyLimit: 2, bought: {}, sold: {} },
     ];
 
-    const buyImpact = 0.20; // 20% بعد الشراء
-    const sellImpact = 0.15; // 15% بعد البيع
-
-    let operationHistory = [];
-    const accountsData = {}; // هيكل: { code: { bought: {cryptoName: amount}, sold: {cryptoName: amount} } }
-    const lastOperation = { op: null };
+    const buyImpact = 0.20;   // زيادة 20% بعد الشراء
+    const sellImpact = 0.15;  // نقصان 15% بعد البيع
 
     const table = document.getElementById("cryptoTable");
     const logDiv = document.getElementById("log");
     const cryptoSelect = document.getElementById("cryptoSelect");
-    const copyLastOpBtn = document.getElementById("copyLastOpBtn");
-    const adminPassword = "TECNO LD7";
+    const reportPage = document.getElementById("reportPage");
+    const reportContent = document.getElementById("reportContent");
+    const adminPanel = document.getElementById("adminPanel");
+    const adminPasswordInput = document.getElementById("adminPassword");
+    const adminOptions = document.getElementById("adminOptions");
+    const adminLog = document.getElementById("adminLog");
 
+    let operations = [];
+    let lastOperation = null;
+    let adminLoggedIn = false;
+
+    // تعبئة قائمة العملات
     cryptos.forEach((c, i) => {
       let opt = document.createElement("option");
       opt.value = i;
@@ -197,23 +207,30 @@
       cryptoSelect.appendChild(opt);
     });
 
+    // دالة لتجهيز سجل الشراء والبيع لحساب معين إذا لم يكن موجودًا
+    function ensureAccountRecord(crypto, account) {
+      if (!crypto.bought[account]) crypto.bought[account] = 0;
+      if (!crypto.sold[account]) crypto.sold[account] = 0;
+    }
+
+    // حساب إجمالي الشراء أو البيع لكل العملة (لكل الحسابات)
+    function totalBought(crypto) {
+      return Object.values(crypto.bought).reduce((a, b) => a + b, 0);
+    }
+    function totalSold(crypto) {
+      return Object.values(crypto.sold).reduce((a, b) => a + b, 0);
+    }
+
     function renderTable() {
       table.innerHTML = "";
       cryptos.forEach((crypto) => {
-        // حساب مجموع الشراء والبيع لكل العملات لجميع الأكواد
-        let totalBought = 0;
-        let totalSold = 0;
-        for (const code in accountsData) {
-          totalBought += (accountsData[code].bought[crypto.name] || 0);
-          totalSold += (accountsData[code].sold[crypto.name] || 0);
-        }
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${crypto.name}</td>
           <td>${crypto.price.toFixed(2)}</td>
           <td>${crypto.dailyLimit}</td>
-          <td>${totalBought}</td>
-          <td>${totalSold}</td>
+          <td>${totalBought(crypto)}</td>
+          <td>${totalSold(crypto)}</td>
         `;
         table.appendChild(row);
       });
@@ -224,6 +241,7 @@
       const type = document.getElementById("typeSelect").value;
       const amount = +document.getElementById("amountInput").value;
       const code = document.getElementById("accountCode").value.trim();
+      const c = cryptos[index];
 
       if (!code) {
         alert("❌ يجب إدخال كود الحساب");
@@ -234,102 +252,71 @@
         return;
       }
 
-      const crypto = cryptos[index];
+      ensureAccountRecord(c, code);
 
-      if (!accountsData[code]) {
-        accountsData[code] = { bought: {}, sold: {} };
+    if (type === "buy" && c.bought[code] + amount > c.dailyLimit) {
+        alert("❌ تجاوزت الحد اليومي لهذه العملة لهذا الحساب");
+        return;
       }
+
+      let oldPrice = c.price;
+      let operationText = "";
 
       if (type === "buy") {
-        let currentBought = accountsData[code].bought[crypto.name] || 0;
-        if (currentBought + amount > crypto.dailyLimit) {
-          alert("❌ تجاوزت الحد اليومي لهذه العملة لهذا الحساب");
-          return;
-        }
+        c.bought[code] += amount;
+        operationText = `✅ شراء ${amount} من ${c.name} بسعر ${oldPrice.toFixed(2)}G لحساب ${code}`;
+        // بعد تسجيل العملية، نزيد السعر
+        c.price = oldPrice * (1 + buyImpact);
       } else {
-        let currentSold = accountsData[code].sold[crypto.name] || 0;
-        if (currentSold + amount > crypto.dailyLimit) {
-          alert("❌ تجاوزت الحد اليومي للبيع لهذه العملة لهذا الحساب");
-          return;
-        }
+        c.sold[code] += amount;
+        operationText = `💱 بيع ${amount} من ${c.name} بسعر ${oldPrice.toFixed(2)}G لحساب ${code}`;
+        // بعد تسجيل العملية، ننقص السعر
+        c.price = oldPrice * (1 - sellImpact);
       }
 
-      // سعر العملية قبل التعديل
-      const oldPrice = crypto.price;
+      operations.push({ text: operationText, type, index, amount, oldPrice, account: code });
 
-      // سجل العملية
-      const opText =
-        (type === "buy" ? "✅ شراء " : "💱 بيع ") +
-      `${amount} ${crypto.name} بسعر ${oldPrice.toFixed(2)}G (كود الحساب: ${code})`;
-
-      operationHistory.push({ text: opText, type, index, amount, code, oldPrice });
-
-      // تحديث بيانات الحساب
-      if (type === "buy") {
-        accountsData[code].bought[crypto.name] = (accountsData[code].bought[crypto.name] || 0) + amount;
-      } else {
-        accountsData[code].sold[crypto.name] = (accountsData[code].sold[crypto.name] || 0) + amount;
-      }
-
-      // بعد تسجيل العملية نغير السعر حسب نوع العملية
-      if (type === "buy") {
-        crypto.price *= (1 + buyImpact);
-      } else {
-        crypto.price *= (1 - sellImpact);
-      }
-
-      // تحديث سجل العمليات على الصفحة
-      logDiv.innerHTML = operationHistory.map((o) => o.text).join("<br>") || "لا توجد عمليات بعد.";
-
-      // عرض زر نسخ آخر عملية
-      copyLastOpBtn.style.display = "inline-block";
-
+      logDiv.innerHTML = operations.map((o) => o.text).join("<br>");
       renderTable();
 
-      // حفظ آخر عملية للنسخ
-      lastOperation.op = opText;
-
-      // تنظيف الحقول
       document.getElementById("amountInput").value = "";
       document.getElementById("accountCode").value = "";
+
+      lastOperation = operationText;
+      showCopyOperationButton();
+    }
+
+    function showCopyOperationButton() {
+      let btn = document.getElementById("copyOpBtn");
+      if (!btn) {
+        btn = document.createElement("button");
+        btn.id = "copyOpBtn";
+        btn.className = "btn copy-btn";
+        btn.style.marginTop = "10px";
+        btn.textContent = "📋 نسخ آخر عملية";
+        btn.onclick = () => {
+          navigator.clipboard.writeText(lastOperation);
+          alert("تم نسخ العملية ✅");
+        };
+        document.querySelector(".operations").appendChild(btn);
+      }
     }
 
     function undoOperation() {
-      if (operationHistory.length === 0) {
+      if (operations.length === 0) {
         alert("❌ لا توجد عمليات للتراجع");
         return;
       }
-      const lastOp = operationHistory.pop();
-      const crypto = cryptos[lastOp.index];
-      const code = lastOp.code;
-      const amount = lastOp.amount;
-      const type = lastOp.type;
+      const lastOp = operations.pop();
+      const c = cryptos[lastOp.index];
 
       // إعادة السعر القديم
-      crypto.price = lastOp.oldPrice;
+      c.price = lastOp.oldPrice;
+      if (lastOp.type === "buy") c.bought[lastOp.account] -= lastOp.amount;
+      else c.sold[lastOp.account] -= lastOp.amount;
 
-      // تعديل بيانات الحساب
-      if (type === "buy") {
-        accountsData[code].bought[crypto.name] -= amount;
-        if (accountsData[code].bought[crypto.name] <= 0) delete accountsData[code].bought[crypto.name];
-      } else {
-        accountsData[code].sold[crypto.name] -= amount;
-        if (accountsData[code].sold[crypto.name] <= 0) delete accountsData[code].sold[crypto.name];
-      }
-
-      // تحديث سجل العمليات
-      logDiv.innerHTML = operationHistory.length ? operationHistory.map((o) => o.text).join("<br>") : "لا توجد عمليات بعد.";
-
+      logDiv.innerHTML = operations.length ? operations.map((o) => o.text).join("<br>") : "لا توجد عمليات بعد.";
       renderTable();
-
-      // تحديث زر نسخ آخر عملية
-      if (operationHistory.length === 0) {
-        copyLastOpBtn.style.display = "none";
-        lastOperation.op = null;
-      } else {
-        lastOperation.op = operationHistory[operationHistory.length - 1].text;
-      }
-
       alert("↩️ تم التراجع عن آخر عملية");
     }
 
@@ -337,122 +324,83 @@
       document.querySelector(".operations").style.display = "none";
       document.querySelector("table").style.display = "none";
       document.querySelector("h1").style.display = "none";
-      document.getElementById("reportPage").style.display = "block";
+      reportPage.style.display = "block";
 
       let totalBuy = 0;
       let totalSell = 0;
 
-      // حساب الإجماليات حسب السعر الحالي والكمية لكل عملية
-      operationHistory.forEach((op) => {
-        const crypto = cryptos[op.index];
-        if (op.type === "buy") {
-          totalBuy += op.amount * crypto.price;
-        } else {
-          totalSell += op.amount * crypto.price;
-        }
+      cryptos.forEach((c) => {
+        totalBuy += totalBought(c) * c.price;
+        totalSell += totalSold(c) * c.price;
       });
 
       totalBuy = totalBuy.toFixed(2);
       totalSell = totalSell.toFixed(2);
-
       const today = new Date().toISOString().slice(0, 10);
 
-      let report = `🤎✨ قسـم GoldCrypto ✨🤎
+      let report = `🤎✨ قسـم GoldCrypto ✨🤎\n\n`;
+      report += `🗓️ تاريخ اليوم: ${today}\n\n`;
+      report += `💠 إجمالي عمليات الشراء: ${totalBuy} G\n`;
+      report += `💠 إجمالي عمليات البيع: ${totalSell} G\n\n`;
+      report += `📌 عدد العمليات: ${operations.length}\n`;
+      report += `${operations.length ? operations.map((o) => "• " + o.text).join("\n") : "- لا توجد عمليات"}\n\n`;
+      report += `📄 الحالة العامة: مستقرة 🏷️\n\n`;
+      report += `🖋️ كاتب التقرير: المساعد الآلي 🤖`;
 
-🗓️ تاريخ اليوم: ${today}
-
-💠 إجمالي عمليات الشراء: ${totalBuy} G
-💠 إجمالي عمليات البيع: ${totalSell} G
-
-📌 عدد العمليات: ${operationHistory.length}
-${operationHistory.length ? operationHistory.map((o) => "• " + o.text).join("\n") : "- لا توجد عمليات"}
-
-📄 الحالة العامة: مستقرة 🏷️
-
-🖋️ كاتب التقرير: المساعد الآلي 🤖`;
-
-      document.getElementById("reportContent").innerText = report;
+      reportContent.innerText = report;
     }
 
     function hideReport() {
       document.querySelector(".operations").style.display = "block";
       document.querySelector("table").style.display = "table";
       document.querySelector("h1").style.display = "block";
-      document.getElementById("reportPage").style.display = "none";
+      reportPage.style.display = "none";
     }
 
     function copyReport() {
-      const reportText = document.getElementById("reportContent").innerText;
+      const reportText = reportContent.innerText;
       navigator.clipboard.writeText(reportText);
       alert("تم نسخ التقرير ✅");
     }
 
-    function copyLastOperation() {
-      if (lastOperation.op) {
-        navigator.clipboard.writeText(lastOperation.op);
-        alert("تم نسخ العملية الأخيرة ✅");
-      }
-    }
-
-    // إدارة القسم
+    // إدارة - كلمة السر وكشف الخيارات
     function checkAdminPassword() {
-      const input = document.getElementById("adminPasswordInput").value.trim();
-      const controls = document.getElementById("adminControls");
-      const msg = document.getElementById("adminMsg");
-      if (input === adminPassword) {
-        controls.style.display = "block";
-        msg.textContent = "تم الدخول إلى قسم الإدارة.";
-        document.getElementById("adminPasswordInput").value = "";
+      const pw = adminPasswordInput.value.trim();
+      if (pw === "TECNO LD7") {
+        adminLoggedIn = true;
+        adminOptions.style.display = "block";
+        adminLog.innerText = "تم الدخول إلى وضع الإدارة بنجاح ✅";
       } else {
-        controls.style.display = "none";
-        msg.textContent = "كلمة السر خاطئة!";
+        adminLoggedIn = false;
+        adminOptions.style.display = "none";
+        adminLog.innerText = "كلمة المرور غير صحيحة ❌";
       }
+      adminPasswordInput.value = "";
     }
 
     function resetPrices() {
-      cryptos.forEach((crypto, i) => {
-        // نعيد السعر الأصلي حسب تعريف العملات
-        switch (crypto.name) {
-          case "Bitcoin (BTC)":
-            crypto.price = 1000;
-            break;
-          case "DASH":
-            crypto.price = 250;
-            break;
-          case "Tether (USDT)":
-            crypto.price = 100;
-            break;
-          case "Monero (XMR)":
-            crypto.price = 600;
-            break;
-          case "Nano (NANO)":
-            crypto.price = 120;
-            break;
-          case "Litecoin (LTC)":
-            crypto.price = 300;
-            break;
-        }
+      cryptos.forEach((c) => {
+        c.price = c.price / (1 + buyImpact) ** totalBought(c); // إعادة السعر الأساسي عن طريق عكس تأثير الشراء فقط
       });
       renderTable();
-      alert("تم إعادة تعيين الأسعار إلى القيم الأصلية ✅");
+      adminLog.innerText = "تم إعادة تعيين الأسعار إلى قيمتها الأساسية ✅";
     }
 
-    function resetReport() {
-      operationHistory = [];
-      for (const code in accountsData) {
-        accountsData[code].bought = {};
-        accountsData[code].sold = {};
-      }
+    function resetOperations() {
+      operations = [];
+      cryptos.forEach((c) => {
+        c.bought = {};
+        c.sold = {};
+      });
       logDiv.innerHTML = "لا توجد عمليات بعد.";
-      copyLastOpBtn.style.display = "none";
-      lastOperation.op = null;
-      alert("تم إعادة تعيين التقرير وسجل العمليات ✅");
+      renderTable();
+      adminLog.innerText = "تم إعادة تعيين سجل العمليات ✅";
     }
 
     function logoutAdmin() {
-      document.getElementById("adminControls").style.display = "none";
-      document.getElementById("adminMsg").textContent = "";
-      alert("تم تسجيل الخروج من قسم الإدارة.");
+      adminLoggedIn = false;
+      adminOptions.style.display = "none";
+      adminLog.innerText = "تم تسجيل الخروج من الإدارة";
     }
 
     renderTable();
