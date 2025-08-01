@@ -7,160 +7,149 @@
 <style>
     body {font-family: "Cairo", sans-serif; background-color: #0d0d0d; color: gold; text-align:center;}
     h1 {color: #ffd700;}
-    .box {margin: 20px auto; padding: 20px; border: 2px solid gold; border-radius: 15px; width: 85%; background: #1a1a1a;}
+    .prices, .admin, .report {margin: 20px auto; padding: 20px; border: 2px solid gold; border-radius: 15px; width: 80%; background: #1a1a1a;}
     button {background: gold; color: black; padding: 10px 20px; margin: 5px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;}
     button:hover {background: #ffcc00;}
-    table {width:100%; color: gold; margin-top:15px; border-collapse: collapse;}
-    th, td {padding:10px; border-bottom:1px solid gold;}
-    input, select {padding:8px; border-radius:5px; border:1px solid gold; margin:5px; width:80%;}
     .hidden {display:none;}
+    table {width:100%; color: gold; margin-top:15px;}
+    th, td {padding:10px; border-bottom:1px solid gold;}
 </style>
 </head>
 <body>
 
 <h1>💰 قسم GoldCrypto 💰</h1>
-
-<!-- عرض الأسعار -->
-<div class="box">
+<div class="prices">
     <h2>أسعار العملات الحالية</h2>
     <table id="priceTable">
-        <tr><th>العملة</th><th>السعر (G)</th></tr>
+        <tr><th>العملة</th><th>السعر (G)</th><th>الحد اليومي</th></tr>
     </table>
 </div>
 
-<!-- تنفيذ عملية شراء/بيع -->
-<div class="box">
-    <h2>تنفيذ عملية</h2>
-    <select id="coinSelect"></select>
-    <br>
-    <input type="number" id="quantity" placeholder="الكمية">
-    <br>
-    <input type="text" id="cardCode" placeholder="كود بطاقة الزبون">
-    <br>
-    <button onclick="makeTransaction('buy')">شراء</button>
-    <button onclick="makeTransaction('sell')">بيع</button>
+<div style="margin:20px;">
+    <button onclick="enterAdmin()">🔑 دخول الإدارة</button>
+    <button onclick="generateReport()">📝 عرض التقرير اليومي</button>
 </div>
 
-<!-- سجل العمليات اليومية -->
-<div class="box">
-    <h2>العمليات اليوم</h2>
-    <table id="txTable">
-        <tr><th>العملة</th><th>النوع</th><th>الكمية</th><th>السعر</th><th>الوقت</th><th>نسخ</th></tr>
-    </table>
+<!-- لوحة الإدارة -->
+<div class="admin hidden" id="adminPanel">
+    <h2>لوحة الإدارة</h2>
+    <table id="adminTable"></table>
     <br>
-    <button onclick="generateReport()">📝 توليد التقرير اليومي</button>
+    <input type="text" id="resetCode" placeholder="رمز إعادة الأسعار">
+    <button onclick="resetPrices()">♻️ إعادة الأسعار الافتراضية</button>
+    <br><br>
+    <button onclick="exitAdmin()">🚪 خروج</button>
 </div>
 
-<!-- التقرير اليومي -->
-<div class="box hidden" id="dailyReport"></div>
+<!-- تقرير يومي -->
+<div class="report hidden" id="dailyReport"></div>
 
 <script>
-    // الأسعار الافتراضية
     const defaultPrices = {
-        "Bitcoin (BTC)": 1000,
-        "DASH": 250,
-        "Tether (USDT)": 100,
-        "Monero (XMR)": 600,
-        "Nano (NANO)": 120,
-        "Litecoin (LTC)": 300
+        "Bitcoin (BTC)": {price:1000, limit:1},
+        "DASH": {price:250, limit:3},
+        "Tether (USDT)": {price:100, limit:5},
+        "Monero (XMR)": {price:600, limit:1},
+        "Nano (NANO)": {price:120, limit:10},
+        "Litecoin (LTC)": {price:300, limit:2}
     };
 
-    let prices = JSON.parse(localStorage.getItem("prices")) || {...defaultPrices};
+    let prices = JSON.parse(localStorage.getItem("prices")) || JSON.parse(JSON.stringify(defaultPrices));
     let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
 
-    function saveData(){
+    function saveData() {
         localStorage.setItem("prices", JSON.stringify(prices));
         localStorage.setItem("transactions", JSON.stringify(transactions));
     }
 
-    function renderPrices(){
+    function renderPrices() {
         const table = document.getElementById("priceTable");
-        const select = document.getElementById("coinSelect");
-        table.innerHTML = "<tr><th>العملة</th><th>السعر (G)</th></tr>";
-        select.innerHTML = "";
-        for(let coin in prices){
-            table.innerHTML += `<tr><td>${coin}</td><td>${prices[coin]}</td></tr>`;
-            select.innerHTML += `<option value="${coin}">${coin}</option>`;
+        table.innerHTML = "<tr><th>العملة</th><th>السعر (G)</th><th>الحد اليومي</th></tr>";
+        for (let coin in prices) {
+            table.innerHTML += `<tr><td>${coin}</td><td>${prices[coin].price}</td><td>${prices[coin].limit}</td></tr>`;
         }
     }
 
-    function renderTransactions(){
-        const table = document.getElementById("txTable");
-        table.innerHTML = "<tr><th>العملة</th><th>النوع</th><th>الكمية</th><th>السعر</th><th>الوقت</th><th>نسخ</th></tr>";
-        const today = new Date().toLocaleDateString('en-CA');
-        transactions.filter(t=>t.date===today).forEach((t,i)=>{
+    function renderAdminTable() {
+        const table = document.getElementById("adminTable");
+        table.innerHTML = "<tr><th>العملة</th><th>شراء</th><th>بيع</th></tr>";
+        for (let coin in prices) {
             table.innerHTML += `
-            <tr>
-                <td>${t.coin}</td>
-                <td>${t.type==="buy"?"شراء":"بيع"}</td>
-                <td>${t.qty}</td>
-                <td>${t.price}</td>
-                <td>${t.time}</td>
-                <td><button onclick="copyTx(${i})">نسخ</button></td>
-            </tr>`;
-        });
+                <tr>
+                    <td>${coin}</td>
+                    <td><button onclick="makeTransaction('${coin}','buy')">شراء</button></td>
+                    <td><button onclick="makeTransaction('${coin}','sell')">بيع</button></td>
+                </tr>`;
+        }
     }
 
-    function makeTransaction(type){
-        const coin = document.getElementById("coinSelect").value;
-        const qty = parseFloat(document.getElementById("quantity").value);
-        const card = document.getElementById("cardCode").value;
-        if(!coin || !qty || !card){
-            alert("⚠️ يرجى إدخال كل البيانات");
+    function makeTransaction(coin, type) {
+        const today = new Date().toLocaleDateString('en-CA');
+        const todayTx = transactions.filter(t => t.date === today && t.coin === coin);
+
+        if(todayTx.length >= prices[coin].limit) {
+            alert("❌ تم تجاوز الحد اليومي لهذه العملة");
             return;
         }
-        // تغيير السعر
-        const change = type==="buy"? 50 : -50;
-        prices[coin] += change;
 
-        const now = new Date();
-        const tx = {
-            coin,
-            type,
-            qty,
-            card,
-            price: prices[coin],
-            date: now.toLocaleDateString('en-CA'),
-            time: now.toLocaleTimeString('ar-EG')
-        };
-
-        transactions.push(tx);
+        let change = type === "buy" ? 50 : -50;
+        prices[coin].price += change;
+        transactions.push({coin,type,date:today,change});
         saveData();
         renderPrices();
-        renderTransactions();
-        alert(`✅ تمت عملية ${type==="buy"?"شراء":"بيع"} على ${coin}`);
+        alert(`✅ تم تسجيل عملية ${type} على ${coin}`);
     }
 
-    function copyTx(i){
-        const t = transactions[i];
-        const text = `عملية ${t.type==="buy"?"شراء":"بيع"}\nالعملة: ${t.coin}\nالكمية: ${t.qty}\nالسعر: ${t.price}\nالوقت: ${t.time}\nكود البطاقة: ${t.card}`;
-        navigator.clipboard.writeText(text);
-        alert("📋 تم نسخ العملية");
+    function enterAdmin() {
+        const code = prompt("أدخل رمز الإدارة:");
+        if(code === "TECNO LD7") {
+            document.getElementById("adminPanel").classList.remove("hidden");
+            renderAdminTable();
+        } else {
+            alert("رمز خاطئ ❌");
+        }
     }
 
-    function generateReport(){
+    function exitAdmin() {
+        document.getElementById("adminPanel").classList.add("hidden");
+    }
+
+    function resetPrices() {
+        const code = document.getElementById("resetCode").value;
+        if(code === "TECNO LI7") {
+            prices = JSON.parse(JSON.stringify(defaultPrices));
+            transactions = [];
+            saveData();
+            renderPrices();
+            alert("✅ تم إعادة الأسعار الافتراضية");
+        } else {
+            alert("❌ رمز إعادة الأسعار خاطئ");
+        }
+    }
+
+    function generateReport() {
         const reportDiv = document.getElementById("dailyReport");
         reportDiv.classList.remove("hidden");
 
-        const today = new Date().toLocaleDateString('en-CA');
-        const todayTx = transactions.filter(t=>t.date===today);
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('ar-EG');
+        const todayTx = transactions.filter(t => new Date(t.date).toLocaleDateString('ar-EG') === dateStr);
 
-        const buys = todayTx.filter(t=>t.type==="buy").length;
-        const sells = todayTx.filter(t=>t.type==="sell").length;
+        let sales = todayTx.filter(t=>t.type==="sell").length;
+        let buys = todayTx.filter(t=>t.type==="buy").length;
 
         reportDiv.innerHTML = `
         <h2>📊 تقرير GoldCrypto اليومي</h2>
-        <p>التاريخ: ${new Date().toLocaleDateString('ar-EG')}</p>
-        <p>إجمالي الشراء: ${buys} عملية</p>
-        <p>إجمالي البيع: ${sells} عملية</p>
-        <p>إجمالي العمليات: ${todayTx.length}</p>
+        <p>التاريخ: ${dateStr}</p>
+        <p>إجمالي عمليات الشراء: ${buys}</p>
+        <p>إجمالي عمليات البيع: ${sales}</p>
+        <p>الحالة العامة: ${buys+sales>0? "نشط" : "هادئ"}</p>
         <hr>
         <p>✍️ تمت كتابة التقرير بواسطة المساعد الآلي</p>
         `;
     }
 
     renderPrices();
-    renderTransactions();
 </script>
 
 </body>
