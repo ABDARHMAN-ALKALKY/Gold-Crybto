@@ -2,39 +2,194 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>قسم GoldCrypto</title>
+  <title>GoldCrypto</title>
   <style>
-    body { font-family: 'Cairo', sans-serif; background: #1a1a1a; color: #f1f1f1; text-align: center; }
+    body {
+      font-family: "Cairo", sans-serif;
+      background: #1b1b1b;
+      color: #f0f0f0;
+      text-align: center;
+    }
     h1 { color: gold; }
-    table { width: 80%; margin: 20px auto; border-collapse: collapse; }
-    th, td { border: 1px solid #444; padding: 10px; }
-    th { background: #333; }
-    button { padding: 5px 10px; margin: 2px; border: none; cursor: pointer; border-radius: 5px; }
-    .buy { background-color: green; color: white; }
-    .sell { background-color: red; color: white; }
-    .undo { background-color: orange; color: white; }
+    .coin {
+      border: 1px solid gold;
+      margin: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #2a2a2a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
     .hidden { display: none; }
-    #report { white-space: pre-line; background: #222; padding: 20px; margin: 20px auto; width: 80%; border-radius: 10px; border: 1px solid #555; }
+    button {
+      padding: 5px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: gold;
+      color: #000;
+      font-weight: bold;
+    }
+    #reportContent {
+      white-space: pre-line;
+      text-align: left;
+      background: #111;
+      padding: 20px;
+      margin: 20px;
+      border: 2px solid gold;
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
+
   <h1>💰 قسم GoldCrypto 💰</h1>
-  
-  <div id="publicView">
-    <h2>💎 أسعار العملات المتاحة</h2>
-    <table id="cryptoTable">
-      <tr><th>العملة</th><th>السعر (G)</th><th>الحد اليومي</th><th>المباعة اليوم</th></tr>
-    </table>
-    <br>
-    <button onclick="loginAdmin()">دخول الإدارة</button>
+  <div id="coin-list"></div>
+
+  <button onclick="loginAdmin()">🔑 دخول الإدارة</button>
+
+  <div id="admin-section" class="hidden">
+    <h2>لوحة الإدارة</h2>
+    <button onclick="showReport()">📄 عرض التقرير اليومي</button>
+    <button onclick="resetPrices()">♻️ إعادة الأسعار للوضع الافتراضي</button>
+    <button onclick="backToClient()">⬅️ عودة للصفحة الرئيسية</button>
   </div>
 
-  <div id="adminView" class="hidden">
-    <h2>لوحة التحكم</h2>
-    <table id="adminTable">
-      <tr><th>العملة</th><th>السعر الحالي</th><th>المباعة اليوم</th><th>شراء</th><th>بيع</th></tr>
-    </table>
-    <button class="undo" onclick="undoLastOperation()">تراجع عن آخر عملية</button>
+  <div id="report-section" class="hidden">
+    <h2>تقرير اليوم</h2>
+    <div id="reportContent"></div>
+    <button onclick="copyReport()">📋 نسخ التقرير</button>
+    <button onclick="backToAdmin()">⬅️ عودة للوحة الإدارة</button>
+  </div>
+
+  <script>
+    // إعدادات العملات
+    const defaultCoins = [
+      { name: "Bitcoin (BTC)", price: 1000, dailyLimit: 1 },
+      { name: "DASH", price: 250, dailyLimit: 3 },
+      { name: "Tether (USDT)", price: 100, dailyLimit: 5 },
+      { name: "Monero (XMR)", price: 600, dailyLimit: 1 },
+      { name: "Nano (NANO)", price: 120, dailyLimit: 10 },
+      { name: "Litecoin (LTC)", price: 300, dailyLimit: 2 }
+    ];
+
+    let coins = JSON.parse(localStorage.getItem("coins")) || defaultCoins;
+    let operations = JSON.parse(localStorage.getItem("operations")) || [];
+
+    const coinList = document.getElementById("coin-list");
+
+    function renderCoins() {
+      coinList.innerHTML = "";
+      coins.forEach((coin, index) => {
+        const div = document.createElement("div");
+        div.className = "coin";
+        div.innerHTML = `
+          <span>${coin.name}</span>
+          <span>${coin.price} G</span>
+        `;
+        coinList.appendChild(div);
+      });
+    }
+    renderCoins();
+
+    function loginAdmin() {
+      const code = prompt("أدخل رمز الإدارة:");
+      if(code === "TECNO LD7"){
+        document.getElementById("admin-section").classList.remove("hidden");
+      } else {
+        alert("رمز خاطئ!");
+      }
+    }
+
+    function backToClient() {
+      document.getElementById("admin-section").classList.add("hidden");
+    }
+
+    function backToAdmin() {
+      document.getElementById("report-section").classList.add("hidden");
+      document.getElementById("admin-section").classList.remove("hidden");
+    }
+
+    function showReport(){
+      const today = new Date();
+      const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+      const dateStr = today.toLocaleDateString('ar-EG', options);
+
+      let totalSales = 0;
+      let totalPurchases = 0;
+      let totalSalesValue = 0;
+      let totalPurchasesValue = 0;
+
+      operations.forEach(op => {
+        if(op.type === "بيع"){
+          totalSales += op.amount;
+          totalSalesValue += op.amount * op.price;
+        } else if(op.type === "شراء"){
+          totalPurchases += op.amount;
+          totalPurchasesValue += op.amount * op.price;
+        }
+      });
+
+      let report = `🏆✨ تـقـريـر قـسـم GoldCrypto ✨🏆\n\n`;
+      report += `📅 التاريخ: ${dateStr}\n\n`;
+
+      report += `💰 عــمــلــيــات الــشــراء 💰\n`;
+      if(totalPurchases === 0){
+        report += `- لا توجد أي عمليات شراء اليوم.\n`;
+      } else {
+        report += `- عدد عمليات الشراء: ${totalPurchases}\n`;
+        report += `- إجمالي قيمة الشراء: ${totalPurchasesValue} G\n\n`;
+      }
+
+      report += `💸 عــمــلــيــات الــبــيــع 💸\n`;
+      if(totalSales === 0){
+        report += `- لا توجد أي عمليات بيع اليوم.\n`;
+      } else {
+        report += `- عدد عمليات البيع: ${totalSales}\n`;
+        report += `- إجمالي قيمة البيع: ${totalSalesValue} G\n\n`;
+      }
+
+      report += `📊 تفاصيل العمليات الفردية:\n`;
+      if(operations.length === 0){
+        report += `- لا توجد أي عمليات مسجلة.\n`;
+      } else {
+        operations.forEach((op,i)=>{
+          report += `${i+1}️⃣ ${op.type} - ${op.coin} - الكمية: ${op.amount} - بسعر: ${op.price}G\n`;
+        });
+      }
+
+      report += `\n🤖 تم إعداد هذا التقرير تلقائيًا بواسطة المساعد الآلي`;
+
+      document.getElementById("reportContent").textContent = report;
+      document.getElementById("admin-section").classList.add("hidden");
+      document.getElementById("report-section").classList.remove("hidden");
+    }
+
+    function copyReport(){
+      const text = document.getElementById("reportContent").textContent;
+      navigator.clipboard.writeText(text).then(()=> alert("تم نسخ التقرير"));
+    }
+
+    function resetPrices(){
+      const code = prompt("أدخل رمز إعادة الضبط:");
+      if(code === "TECNO LI7"){
+        coins = [...defaultCoins];
+        localStorage.setItem("coins", JSON.stringify(coins));
+        renderCoins();
+        alert("تمت إعادة الأسعار للوضع الافتراضي!");
+      } else {
+        alert("رمز خاطئ!");
+      }
+    }
+  </script>
+
+</body>
+</html>    <button class="undo" onclick="undoLastOperation()">تراجع عن آخر عملية</button>
     <button onclick="resetPrices()">إعادة تعيين الأسعار والعدادات اليومية</button>
     <button onclick="generateReport()">توليد التقرير اليومي</button>
     <button onclick="logoutAdmin()">تسجيل الخروج</button>
