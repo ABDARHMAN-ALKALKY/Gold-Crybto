@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GoldCrypto</title>
+<title>GoldCrypto - صفحة الزبون</title>
 <style>
     body {font-family: "Cairo", sans-serif; background-color: #0d0d0d; color: gold; text-align:center;}
     h1 {color: #ffd700;}
-    .prices, .admin, .report {margin: 20px auto; padding: 20px; border: 2px solid gold; border-radius: 15px; width: 80%; background: #1a1a1a;}
+    .prices, .admin {margin: 20px auto; padding: 20px; border: 2px solid gold; border-radius: 15px; width: 80%; background: #1a1a1a;}
     button {background: gold; color: black; padding: 10px 20px; margin: 5px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;}
     button:hover {background: #ffcc00;}
     .hidden {display:none;}
@@ -25,9 +25,9 @@
     </table>
 </div>
 
+<!-- زر واحد فقط -->
 <div style="margin:20px;">
     <button onclick="enterAdmin()">🔑 دخول الإدارة</button>
-    <button onclick="generateReport()">📝 عرض التقرير اليومي</button>
 </div>
 
 <!-- لوحة الإدارة -->
@@ -35,6 +35,100 @@
     <h2>لوحة الإدارة</h2>
     <table id="adminTable"></table>
     <br>
+    <input type="text" id="resetCode" placeholder="رمز إعادة الأسعار">
+    <button onclick="resetPrices()">♻️ إعادة الأسعار الافتراضية</button>
+    <br><br>
+    <button onclick="exitAdmin()">🚪 خروج</button>
+</div>
+
+<script>
+    const defaultPrices = {
+        "Bitcoin (BTC)": {price:1000, limit:1},
+        "DASH": {price:250, limit:3},
+        "Tether (USDT)": {price:100, limit:5},
+        "Monero (XMR)": {price:600, limit:1},
+        "Nano (NANO)": {price:120, limit:10},
+        "Litecoin (LTC)": {price:300, limit:2}
+    };
+
+    let prices = JSON.parse(localStorage.getItem("prices")) || JSON.parse(JSON.stringify(defaultPrices));
+    let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+
+    function saveData() {
+        localStorage.setItem("prices", JSON.stringify(prices));
+        localStorage.setItem("transactions", JSON.stringify(transactions));
+    }
+
+    function renderPrices() {
+        const table = document.getElementById("priceTable");
+        table.innerHTML = "<tr><th>العملة</th><th>السعر (G)</th><th>الحد اليومي</th></tr>";
+        for (let coin in prices) {
+            table.innerHTML += `<tr><td>${coin}</td><td>${prices[coin].price}</td><td>${prices[coin].limit}</td></tr>`;
+        }
+    }
+
+    function renderAdminTable() {
+        const table = document.getElementById("adminTable");
+        table.innerHTML = "<tr><th>العملة</th><th>شراء</th><th>بيع</th></tr>";
+        for (let coin in prices) {
+            table.innerHTML += `
+                <tr>
+                    <td>${coin}</td>
+                    <td><button onclick="makeTransaction('${coin}','buy')">شراء</button></td>
+                    <td><button onclick="makeTransaction('${coin}','sell')">بيع</button></td>
+                </tr>`;
+        }
+    }
+
+    function makeTransaction(coin, type) {
+        const today = new Date().toLocaleDateString('en-CA');
+        const todayTx = transactions.filter(t => t.date === today && t.coin === coin);
+
+        if(todayTx.length >= prices[coin].limit) {
+            alert("❌ تم تجاوز الحد اليومي لهذه العملة");
+            return;
+        }
+
+        let change = type === "buy" ? 50 : -50;
+        prices[coin].price += change;
+        transactions.push({coin,type,date:today,change});
+        saveData();
+        renderPrices();
+        alert(`✅ تم تسجيل عملية ${type} على ${coin}`);
+    }
+
+    function enterAdmin() {
+        const code = prompt("أدخل رمز الإدارة:");
+        if(code === "TECNO LD7") {
+            document.getElementById("adminPanel").classList.remove("hidden");
+            renderAdminTable();
+        } else {
+            alert("رمز خاطئ ❌");
+        }
+    }
+
+    function exitAdmin() {
+        document.getElementById("adminPanel").classList.add("hidden");
+    }
+
+    function resetPrices() {
+        const code = document.getElementById("resetCode").value;
+        if(code === "TECNO LI7") {
+            prices = JSON.parse(JSON.stringify(defaultPrices));
+            transactions = [];
+            saveData();
+            renderPrices();
+            alert("✅ تم إعادة الأسعار الافتراضية");
+        } else {
+            alert("❌ رمز إعادة الأسعار خاطئ");
+        }
+    }
+
+    renderPrices();
+</script>
+
+</body>
+</html>    <br>
     <input type="text" id="resetCode" placeholder="رمز إعادة الأسعار">
     <button onclick="resetPrices()">♻️ إعادة الأسعار الافتراضية</button>
     <br><br>
