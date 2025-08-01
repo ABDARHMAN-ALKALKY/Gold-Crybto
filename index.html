@@ -1,40 +1,159 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <title>GoldCrypto</title>
-  <style>
-    body {
-      font-family: "Cairo", sans-serif;
-      background: #1b1b1b;
-      color: #f0f0f0;
-      text-align: center;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GoldCrypto</title>
+<style>
+    body {font-family: "Cairo", sans-serif; background-color: #0d0d0d; color: gold; text-align:center;}
+    h1 {color: #ffd700;}
+    .prices, .admin, .report {margin: 20px auto; padding: 20px; border: 2px solid gold; border-radius: 15px; width: 80%; background: #1a1a1a;}
+    button {background: gold; color: black; padding: 10px 20px; margin: 5px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;}
+    button:hover {background: #ffcc00;}
+    .hidden {display:none;}
+    table {width:100%; color: gold; margin-top:15px;}
+    th, td {padding:10px; border-bottom:1px solid gold;}
+</style>
+</head>
+<body>
+
+<h1>💰 قسم GoldCrypto 💰</h1>
+<div class="prices">
+    <h2>أسعار العملات الحالية</h2>
+    <table id="priceTable">
+        <tr><th>العملة</th><th>السعر (G)</th><th>الحد اليومي</th></tr>
+    </table>
+</div>
+
+<div style="margin:20px;">
+    <button onclick="enterAdmin()">🔑 دخول الإدارة</button>
+    <button onclick="generateReport()">📝 عرض التقرير اليومي</button>
+</div>
+
+<!-- لوحة الإدارة -->
+<div class="admin hidden" id="adminPanel">
+    <h2>لوحة الإدارة</h2>
+    <table id="adminTable"></table>
+    <br>
+    <input type="text" id="resetCode" placeholder="رمز إعادة الأسعار">
+    <button onclick="resetPrices()">♻️ إعادة الأسعار الافتراضية</button>
+    <br><br>
+    <button onclick="exitAdmin()">🚪 خروج</button>
+</div>
+
+<!-- تقرير يومي -->
+<div class="report hidden" id="dailyReport"></div>
+
+<script>
+    const defaultPrices = {
+        "Bitcoin (BTC)": {price:1000, limit:1},
+        "DASH": {price:250, limit:3},
+        "Tether (USDT)": {price:100, limit:5},
+        "Monero (XMR)": {price:600, limit:1},
+        "Nano (NANO)": {price:120, limit:10},
+        "Litecoin (LTC)": {price:300, limit:2}
+    };
+
+    let prices = JSON.parse(localStorage.getItem("prices")) || JSON.parse(JSON.stringify(defaultPrices));
+    let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+
+    function saveData() {
+        localStorage.setItem("prices", JSON.stringify(prices));
+        localStorage.setItem("transactions", JSON.stringify(transactions));
     }
-    h1 { color: gold; }
-    .coin {
-      border: 1px solid gold;
-      margin: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      background: #2a2a2a;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
+
+    function renderPrices() {
+        const table = document.getElementById("priceTable");
+        table.innerHTML = "<tr><th>العملة</th><th>السعر (G)</th><th>الحد اليومي</th></tr>";
+        for (let coin in prices) {
+            table.innerHTML += `<tr><td>${coin}</td><td>${prices[coin].price}</td><td>${prices[coin].limit}</td></tr>`;
+        }
     }
-    .hidden { display: none; }
-    button {
-      padding: 5px 15px;
-      margin: 5px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      background: gold;
-      color: #000;
-      font-weight: bold;
+
+    function renderAdminTable() {
+        const table = document.getElementById("adminTable");
+        table.innerHTML = "<tr><th>العملة</th><th>شراء</th><th>بيع</th></tr>";
+        for (let coin in prices) {
+            table.innerHTML += `
+                <tr>
+                    <td>${coin}</td>
+                    <td><button onclick="makeTransaction('${coin}','buy')">شراء</button></td>
+                    <td><button onclick="makeTransaction('${coin}','sell')">بيع</button></td>
+                </tr>`;
+        }
     }
+
+    function makeTransaction(coin, type) {
+        const today = new Date().toLocaleDateString('en-CA');
+        const todayTx = transactions.filter(t => t.date === today && t.coin === coin);
+
+        if(todayTx.length >= prices[coin].limit) {
+            alert("❌ تم تجاوز الحد اليومي لهذه العملة");
+            return;
+        }
+
+        let change = type === "buy" ? 50 : -50;
+        prices[coin].price += change;
+        transactions.push({coin,type,date:today,change});
+        saveData();
+        renderPrices();
+        alert(`✅ تم تسجيل عملية ${type} على ${coin}`);
+    }
+
+    function enterAdmin() {
+        const code = prompt("أدخل رمز الإدارة:");
+        if(code === "TECNO LD7") {
+            document.getElementById("adminPanel").classList.remove("hidden");
+            renderAdminTable();
+        } else {
+            alert("رمز خاطئ ❌");
+        }
+    }
+
+    function exitAdmin() {
+        document.getElementById("adminPanel").classList.add("hidden");
+    }
+
+    function resetPrices() {
+        const code = document.getElementById("resetCode").value;
+        if(code === "TECNO LI7") {
+            prices = JSON.parse(JSON.stringify(defaultPrices));
+            transactions = [];
+            saveData();
+            renderPrices();
+            alert("✅ تم إعادة الأسعار الافتراضية");
+        } else {
+            alert("❌ رمز إعادة الأسعار خاطئ");
+        }
+    }
+
+    function generateReport() {
+        const reportDiv = document.getElementById("dailyReport");
+        reportDiv.classList.remove("hidden");
+
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('ar-EG');
+        const todayTx = transactions.filter(t => new Date(t.date).toLocaleDateString('ar-EG') === dateStr);
+
+        let sales = todayTx.filter(t=>t.type==="sell").length;
+        let buys = todayTx.filter(t=>t.type==="buy").length;
+
+        reportDiv.innerHTML = `
+        <h2>📊 تقرير GoldCrypto اليومي</h2>
+        <p>التاريخ: ${dateStr}</p>
+        <p>إجمالي عمليات الشراء: ${buys}</p>
+        <p>إجمالي عمليات البيع: ${sales}</p>
+        <p>الحالة العامة: ${buys+sales>0? "نشط" : "هادئ"}</p>
+        <hr>
+        <p>✍️ تمت كتابة التقرير بواسطة المساعد الآلي</p>
+        `;
+    }
+
+    renderPrices();
+</script>
+
+</body>
+</html>    }
     #reportContent {
       white-space: pre-line;
       text-align: left;
