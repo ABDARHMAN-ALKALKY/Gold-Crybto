@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>قسم GoldCrypto</title>
   <style>
     body {
@@ -11,113 +11,40 @@
       text-align: center;
       padding: 20px;
     }
-    h1 {
-      color: #ffcc00;
-    }
+    h1 { color: #ffcc00; }
     table {
-      width: 80%;
-      margin: 20px auto;
+      width: 80%; margin: 20px auto;
       border-collapse: collapse;
       background: #2f2f47;
-      border-radius: 12px;
-      overflow: hidden;
+      border-radius: 12px; overflow: hidden;
     }
-    th,
-    td {
-      padding: 12px;
-      border-bottom: 1px solid #444;
-    }
-    th {
-      background-color: #ffcc00;
-      color: #000;
-    }
+    th, td { padding: 12px; border-bottom: 1px solid #444; }
+    th { background-color: #ffcc00; color: #000; }
     .operations {
-      margin: 20px auto;
-      width: 80%;
-      background: #2f2f47;
-      padding: 20px;
-      border-radius: 12px;
+      margin: 20px auto; width: 80%;
+      background: #2f2f47; padding: 20px; border-radius: 12px;
     }
-    #log {
-      margin-top: 20px;
-      text-align: right;
-      max-height: 200px;
-      overflow-y: auto;
-      word-break: break-word;
-    }
+    #log { margin-top: 20px; text-align: right; max-height: 200px; overflow-y: auto; }
     .report-page {
-      display: none;
-      background: #1e1e2f;
-      padding: 20px;
-      border-radius: 12px;
-      text-align: right;
-      width: 80%;
-      margin: auto;
-      white-space: pre-wrap;
+      display: none; background: #1e1e2f;
+      padding: 20px; border-radius: 12px;
+      text-align: right; width: 80%; margin: auto;
     }
     .btn {
-      padding: 10px 20px;
-      margin: 10px;
-      background: #ffcc00;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
+      padding: 10px 20px; margin: 10px;
+      background: #ffcc00; color: #000;
+      border: none; border-radius: 8px; cursor: pointer; font-weight: bold;
     }
-    .btn:hover {
-      background: #ffd633;
+    .btn:hover { background: #ffd633; }
+    .copy-btn { background: #00c896; color: #fff; margin: 5px; }
+    .copy-btn:hover { background: #00e0a6; }
+    select, input {
+      padding: 8px; margin: 5px;
+      border-radius: 6px; border: none; text-align: center;
     }
-    .copy-btn {
-      background: #00c896;
-      color: #fff;
-      margin: 5px;
-    }
-    .copy-btn:hover {
-      background: #00e0a6;
-    }
-    select,
-    input {
-      padding: 8px;
-      margin: 5px;
-      border-radius: 6px;
-      border: none;
-      text-align: center;
-    }
-    #adminPanel {
-      display: none;
-      margin: 20px auto;
-      width: 80%;
-      background: #2f2f47;
-      padding: 20px;
-      border-radius: 12px;
-      text-align: center;
-      color: #ffcc00;
-    }
-    #adminPanel input[type="password"] {
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
-      text-align: center;
-      margin-right: 10px;
-      width: 200px;
-    }
-    #adminOptions {
-      margin-top: 10px;
-      display: none;
-    }
-    #adminOptions button {
-      margin: 5px;
-      background: #ffcc00;
-      color: #000;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    #adminOptions button:hover {
-      background: #ffd633;
+    .admin-panel {
+      display: none; margin-top: 20px; background: #2f2f47;
+      padding: 15px; border-radius: 12px; width: 60%; margin: 20px auto;
     }
   </style>
 </head>
@@ -125,15 +52,13 @@
   <h1>💰 قسم GoldCrypto</h1>
 
   <table>
-    <thead>
-      <tr>
-        <th>العملة</th>
-        <th>السعر الحالي (G)</th>
-        <th>الحد اليومي لكل حساب</th>
-        <th>المشتريات اليوم</th>
-        <th>المبيعات اليوم</th>
-      </tr>
-    </thead>
+    <tr>
+      <th>العملة</th>
+      <th>السعر الحالي (G)</th>
+      <th>الحد اليومي</th>
+      <th>المشتريات اليوم</th>
+      <th>المبيعات اليوم</th>
+    </tr>
     <tbody id="cryptoTable"></tbody>
   </table>
 
@@ -144,8 +69,8 @@
       <option value="buy">شراء</option>
       <option value="sell">بيع</option>
     </select>
-    <input type="number" id="amountInput" placeholder="الكمية" min="1" />
-    <input type="text" id="accountCode" placeholder="كود الحساب" />
+    <input type="number" id="amountInput" placeholder="الكمية">
+    <input type="text" id="accountCode" placeholder="كود الحساب">
     <button class="btn" onclick="addOperation()">إضافة العملية</button>
     <button class="btn" onclick="undoOperation()">↩️ تراجع عن آخر عملية</button>
 
@@ -161,64 +86,50 @@
     <button class="btn" onclick="hideReport()">🔙 رجوع</button>
   </div>
 
-  <div id="adminPanel">
-    <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور للإدارة" />
-    <button class="btn" onclick="checkAdminPassword()">دخول الإدارة</button>
-    <div id="adminOptions">
-      <button onclick="resetPrices()">إعادة تعيين الأسعار</button>
-      <button onclick="resetOperations()">إعادة تعيين سجل العمليات</button>
-      <button onclick="logoutAdmin()">خروج من الإدارة</button>
-      <div id="adminLog" style="margin-top:10px; color:#0f0;"></div>
+  <div style="margin-top:20px;">
+    <button class="btn" onclick="showAdminPanel()">⚙️ إدارة</button>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <input type="password" id="adminPass" placeholder="كلمة السر">
+    <button class="btn" onclick="checkPassword()">دخول</button>
+    <div id="adminOptions" style="display:none;">
+      <button class="btn" onclick="resetPrices()">♻️ إعادة تعيين الأسعار</button>
+      <button class="btn" onclick="resetReport()">🗑️ إعادة تعيين التقرير</button>
     </div>
   </div>
 
   <script>
-    const cryptos = [
-      { name: "Bitcoin (BTC)", price: 1000, dailyLimit: 1, bought: {}, sold: {} },
-      { name: "DASH", price: 250, dailyLimit: 3, bought: {}, sold: {} },
-      { name: "Tether (USDT)", price: 100, dailyLimit: 5, bought: {}, sold: {} },
-      { name: "Monero (XMR)", price: 600, dailyLimit: 1, bought: {}, sold: {} },
-      { name: "Nano (NANO)", price: 120, dailyLimit: 10, bought: {}, sold: {} },
-      { name: "Litecoin (LTC)", price: 300, dailyLimit: 2, bought: {}, sold: {} },
+    let cryptos = JSON.parse(localStorage.getItem("cryptos")) || [
+      {name: "Bitcoin (BTC)", price: 1000, dailyLimit: 1, bought: 0, sold: 0},
+      {name: "DASH", price: 250, dailyLimit: 3, bought: 0, sold: 0},
+      {name: "Tether (USDT)", price: 100, dailyLimit: 5, bought: 0, sold: 0},
+      {name: "Monero (XMR)", price: 600, dailyLimit: 1, bought: 0, sold: 0},
+      {name: "Nano (NANO)", price: 120, dailyLimit: 10, bought: 0, sold: 0},
+      {name: "Litecoin (LTC)", price: 300, dailyLimit: 2, bought: 0, sold: 0},
     ];
 
-    const buyImpact = 0.20;   // زيادة 20% بعد الشراء
-    const sellImpact = 0.15;  // نقصان 15% بعد البيع
+    const buyImpact = 0.20;   // +20% عند الشراء
+    const sellImpact = 0.15; // -15% عند البيع
+
+    let operations = JSON.parse(localStorage.getItem("operations")) || [];
+    let userDailyOps = JSON.parse(localStorage.getItem("userDailyOps")) || {}; 
 
     const table = document.getElementById("cryptoTable");
     const logDiv = document.getElementById("log");
     const cryptoSelect = document.getElementById("cryptoSelect");
-    const reportPage = document.getElementById("reportPage");
-    const reportContent = document.getElementById("reportContent");
-    const adminPanel = document.getElementById("adminPanel");
-    const adminPasswordInput = document.getElementById("adminPassword");
-    const adminOptions = document.getElementById("adminOptions");
-    const adminLog = document.getElementById("adminLog");
 
-    let operations = [];
-    let lastOperation = null;
-    let adminLoggedIn = false;
-
-    // تعبئة قائمة العملات
-    cryptos.forEach((c, i) => {
+    cryptos.forEach((c,i)=>{
       let opt = document.createElement("option");
       opt.value = i;
       opt.textContent = c.name;
       cryptoSelect.appendChild(opt);
     });
 
-    // دالة لتجهيز سجل الشراء والبيع لحساب معين إذا لم يكن موجودًا
-    function ensureAccountRecord(crypto, account) {
-      if (!crypto.bought[account]) crypto.bought[account] = 0;
-      if (!crypto.sold[account]) crypto.sold[account] = 0;
-    }
-
-    // حساب إجمالي الشراء أو البيع لكل العملة (لكل الحسابات)
-    function totalBought(crypto) {
-      return Object.values(crypto.bought).reduce((a, b) => a + b, 0);
-    }
-    function totalSold(crypto) {
-      return Object.values(crypto.sold).reduce((a, b) => a + b, 0);
+    function saveData() {
+      localStorage.setItem("cryptos", JSON.stringify(cryptos));
+      localStorage.setItem("operations", JSON.stringify(operations));
+      localStorage.setItem("userDailyOps", JSON.stringify(userDailyOps));
     }
 
     function renderTable() {
@@ -229,11 +140,14 @@
           <td>${crypto.name}</td>
           <td>${crypto.price.toFixed(2)}</td>
           <td>${crypto.dailyLimit}</td>
-          <td>${totalBought(crypto)}</td>
-          <td>${totalSold(crypto)}</td>
+          <td>${crypto.bought}</td>
+          <td>${crypto.sold}</td>
         `;
         table.appendChild(row);
       });
+      logDiv.innerHTML = operations.length ? operations.map((o,i)=>
+        `${o.text} <button class="btn copy-btn" onclick="copyOperation(${i})">📋</button>`).join("<br>")
+        : "لا توجد عمليات بعد.";
     }
 
     function addOperation() {
@@ -243,164 +157,130 @@
       const code = document.getElementById("accountCode").value.trim();
       const c = cryptos[index];
 
-      if (!code) {
-        alert("❌ يجب إدخال كود الحساب");
-        return;
-      }
-      if (!amount || amount <= 0) {
-        alert("❌ أدخل كمية صحيحة");
-        return;
-      }
+      if (!code) { alert("❌ يجب إدخال كود الحساب"); return; }
+      if (!amount || amount <= 0) { alert("❌ أدخل كمية صحيحة"); return; }
 
-      ensureAccountRecord(c, code);
+      if(!userDailyOps[code]) userDailyOps[code] = {};
+      if(!userDailyOps[code][c.name]) userDailyOps[code][c.name] = 0;
 
-    if (type === "buy" && c.bought[code] + amount > c.dailyLimit) {
+      if (type === "buy" && userDailyOps[code][c.name] + amount > c.dailyLimit) {
         alert("❌ تجاوزت الحد اليومي لهذه العملة لهذا الحساب");
         return;
       }
 
       let oldPrice = c.price;
-      let operationText = "";
 
       if (type === "buy") {
-        c.bought[code] += amount;
-        operationText = `✅ شراء ${amount} من ${c.name} بسعر ${oldPrice.toFixed(2)}G لحساب ${code}`;
-        // بعد تسجيل العملية، نزيد السعر
-        c.price = oldPrice * (1 + buyImpact);
+        c.bought += amount;
+        userDailyOps[code][c.name] += amount;
+        operations.push({text:`✅ شراء ${amount} ${c.name} بسعر ${oldPrice.toFixed(2)}G`, type, index, amount, oldPrice});
+        c.price *= (1 + buyImpact);
       } else {
-        c.sold[code] += amount;
-        operationText = `💱 بيع ${amount} من ${c.name} بسعر ${oldPrice.toFixed(2)}G لحساب ${code}`;
-        // بعد تسجيل العملية، ننقص السعر
-        c.price = oldPrice * (1 - sellImpact);
+        c.sold += amount;
+        operations.push({text:`💱 بيع ${amount} ${c.name} بسعر ${oldPrice.toFixed(2)}G`, type, index, amount, oldPrice});
+        c.price *= (1 - sellImpact);
       }
 
-      operations.push({ text: operationText, type, index, amount, oldPrice, account: code });
-
-      logDiv.innerHTML = operations.map((o) => o.text).join("<br>");
+      saveData();
       renderTable();
-
       document.getElementById("amountInput").value = "";
       document.getElementById("accountCode").value = "";
-
-      lastOperation = operationText;
-      showCopyOperationButton();
-    }
-
-    function showCopyOperationButton() {
-      let btn = document.getElementById("copyOpBtn");
-      if (!btn) {
-        btn = document.createElement("button");
-        btn.id = "copyOpBtn";
-        btn.className = "btn copy-btn";
-        btn.style.marginTop = "10px";
-        btn.textContent = "📋 نسخ آخر عملية";
-        btn.onclick = () => {
-          navigator.clipboard.writeText(lastOperation);
-          alert("تم نسخ العملية ✅");
-        };
-        document.querySelector(".operations").appendChild(btn);
-      }
     }
 
     function undoOperation() {
-      if (operations.length === 0) {
-        alert("❌ لا توجد عمليات للتراجع");
-        return;
-      }
+      if (operations.length === 0) { alert("❌ لا توجد عمليات للتراجع"); return; }
       const lastOp = operations.pop();
       const c = cryptos[lastOp.index];
 
-      // إعادة السعر القديم
       c.price = lastOp.oldPrice;
-      if (lastOp.type === "buy") c.bought[lastOp.account] -= lastOp.amount;
-      else c.sold[lastOp.account] -= lastOp.amount;
+      if (lastOp.type === "buy") {
+        c.bought -= lastOp.amount;
+      } else c.sold -= lastOp.amount;
 
-      logDiv.innerHTML = operations.length ? operations.map((o) => o.text).join("<br>") : "لا توجد عمليات بعد.";
+      saveData();
       renderTable();
       alert("↩️ تم التراجع عن آخر عملية");
+    }
+
+    function copyOperation(i) {
+      navigator.clipboard.writeText(operations[i].text);
+      alert("تم نسخ العملية ✅");
     }
 
     function showReport() {
       document.querySelector(".operations").style.display = "none";
       document.querySelector("table").style.display = "none";
       document.querySelector("h1").style.display = "none";
-      reportPage.style.display = "block";
+      document.getElementById("reportPage").style.display = "block";
 
-      let totalBuy = 0;
-      let totalSell = 0;
+      let totalBuy = operations.filter(o=>o.type==="buy").reduce((a, o) => a + (o.amount*o.oldPrice), 0).toFixed(2);
+      let totalSell = operations.filter(o=>o.type==="sell").reduce((a, o) => a + (o.amount*o.oldPrice), 0).toFixed(2);
+      const today = new Date().toISOString().slice(0,10);
 
-      cryptos.forEach((c) => {
-        totalBuy += totalBought(c) * c.price;
-        totalSell += totalSold(c) * c.price;
-      });
+      let report = `
+🤎✨ قسـم GoldCrypto ✨🤎
 
-      totalBuy = totalBuy.toFixed(2);
-      totalSell = totalSell.toFixed(2);
-      const today = new Date().toISOString().slice(0, 10);
+🗓️ تاريخ اليوم: ${today}
 
-      let report = `🤎✨ قسـم GoldCrypto ✨🤎\n\n`;
-      report += `🗓️ تاريخ اليوم: ${today}\n\n`;
-      report += `💠 إجمالي عمليات الشراء: ${totalBuy} G\n`;
-      report += `💠 إجمالي عمليات البيع: ${totalSell} G\n\n`;
-      report += `📌 عدد العمليات: ${operations.length}\n`;
-      report += `${operations.length ? operations.map((o) => "• " + o.text).join("\n") : "- لا توجد عمليات"}\n\n`;
-      report += `📄 الحالة العامة: مستقرة 🏷️\n\n`;
-      report += `🖋️ كاتب التقرير: المساعد الآلي 🤖`;
+💠 إجمالي عمليات الشراء: ${totalBuy} G
+💠 إجمالي عمليات البيع: ${totalSell} G
 
-      reportContent.innerText = report;
+📌 العمليات المنفذة:
+${operations.length ? operations.map(o=>"• "+o.text).join("\n") : "- لا توجد عمليات"}
+
+📄 الحالة العامة: مستقرة 🏷️
+
+🖋️ كاتب التقرير: المساعد الآلي 🤖
+      `;
+
+      document.getElementById("reportContent").innerText = report;
     }
 
     function hideReport() {
       document.querySelector(".operations").style.display = "block";
       document.querySelector("table").style.display = "table";
       document.querySelector("h1").style.display = "block";
-      reportPage.style.display = "none";
+      document.getElementById("reportPage").style.display = "none";
     }
 
     function copyReport() {
-      const reportText = reportContent.innerText;
+      const reportText = document.getElementById("reportContent").innerText;
       navigator.clipboard.writeText(reportText);
       alert("تم نسخ التقرير ✅");
     }
 
-    // إدارة - كلمة السر وكشف الخيارات
-    function checkAdminPassword() {
-      const pw = adminPasswordInput.value.trim();
-      if (pw === "TECNO LD7") {
-        adminLoggedIn = true;
-        adminOptions.style.display = "block";
-        adminLog.innerText = "تم الدخول إلى وضع الإدارة بنجاح ✅";
-      } else {
-        adminLoggedIn = false;
-        adminOptions.style.display = "none";
-        adminLog.innerText = "كلمة المرور غير صحيحة ❌";
-      }
-      adminPasswordInput.value = "";
+    function showAdminPanel() {
+      document.getElementById("adminPanel").style.display = "block";
+    }
+
+    function checkPassword() {
+      const pass = document.getElementById("adminPass").value;
+      if(pass==="TECNO LD7") {
+        document.getElementById("adminOptions").style.display="block";
+        alert("تم فتح لوحة الإدارة ✅");
+      } else alert("❌ كلمة المرور غير صحيحة");
     }
 
     function resetPrices() {
-      cryptos.forEach((c) => {
-        c.price = c.price / (1 + buyImpact) ** totalBought(c); // إعادة السعر الأساسي عن طريق عكس تأثير الشراء فقط
+      cryptos.forEach(c=>{
+        if(c.name.includes("Bitcoin")) c.price=1000;
+        else if(c.name==="DASH") c.price=250;
+        else if(c.name.includes("Tether")) c.price=100;
+        else if(c.name.includes("Monero")) c.price=600;
+        else if(c.name.includes("Nano")) c.price=120;
+        else if(c.name.includes("Litecoin")) c.price=300;
+        c.bought=0; c.sold=0;
       });
+      saveData();
       renderTable();
-      adminLog.innerText = "تم إعادة تعيين الأسعار إلى قيمتها الأساسية ✅";
+      alert("تمت إعادة تعيين الأسعار ✅");
     }
 
-    function resetOperations() {
-      operations = [];
-      cryptos.forEach((c) => {
-        c.bought = {};
-        c.sold = {};
-      });
-      logDiv.innerHTML = "لا توجد عمليات بعد.";
+    function resetReport() {
+      operations=[]; userDailyOps={};
+      saveData();
       renderTable();
-      adminLog.innerText = "تم إعادة تعيين سجل العمليات ✅";
-    }
-
-    function logoutAdmin() {
-      adminLoggedIn = false;
-      adminOptions.style.display = "none";
-      adminLog.innerText = "تم تسجيل الخروج من الإدارة";
+      alert("تمت إعادة تعيين التقرير ✅");
     }
 
     renderTable();
