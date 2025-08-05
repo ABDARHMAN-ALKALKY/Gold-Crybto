@@ -1,416 +1,271 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-<meta charset="UTF-8" />
-<title>GoldCrypto إدارة عليا</title>
+<meta charset="UTF-8">
+<title>نظام المحافظ</title>
 <style>
-  body {
-    background: linear-gradient(to bottom, #1e1e2f, #292945);
-    color: #f5f5f5;
-    font-family: "Cairo", sans-serif;
-    text-align: center;
-    padding: 20px;
-  }
-  h1, h2 { color: #ffcc00; }
-  .hidden { display: none; }
-  input, select, button, textarea {
-    margin: 6px;
-    padding: 8px;
-    border-radius: 6px;
-    border: none;
-    text-align: center;
-    font-size: 16px;
-  }
-  button {
-    background: #ffcc00;
-    color: #000;
-    cursor: pointer;
-    font-weight: bold;
-    border-radius: 8px;
-    padding: 10px 20px;
-  }
-  button:hover { background: #ffd633; }
-  table {
-    margin: 20px auto;
-    width: 90%;
-    border-collapse: collapse;
-    background: #2f2f47;
-    border-radius: 12px;
-    overflow: hidden;
-    color: #f5f5f5;
-  }
-  th, td {
-    padding: 12px;
-    border-bottom: 1px solid #444;
-  }
-  th {
-    background-color: #ffcc00;
-    color: #000;
-  }
-  textarea {
-    width: 90%;
-    height: 150px;
-    background: #1e1e2f;
-    color: #fff;
-    resize: none;
-  }
-  #lastOperation {
-    margin-top: 15px;
-    background: #00c896;
-    color: #fff;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: bold;
-  }
+body {font-family: Arial; direction: rtl; background: #f5f5f5; padding: 20px;}
+.container {max-width: 950px; margin: auto; background: white; padding: 20px; border-radius: 10px;}
+h2 {text-align: center;}
+.hidden {display: none;}
+input, button, select {margin: 5px; padding: 8px;}
+table {width: 100%; border-collapse: collapse; margin-top: 10px;}
+td, th {border: 1px solid #ccc; padding: 5px; text-align: center;}
+textarea {width: 100%; height: 120px;}
+.admin-btn {margin: 5px;}
 </style>
 </head>
 <body>
+<div class="container">
+  <h2>💰 نظام المحافظ للعملات</h2>
 
-<h1>GoldCrypto الإدارة العليا</h1>
+  <!-- تسجيل الدخول -->
+  <div id="loginDiv">
+    <h3>تسجيل دخول العميل</h3>
+    <input id="loginName" placeholder="اسم الحساب"><br>
+    <input id="loginCard" placeholder="كود البطاقة البنكية"><br>
+    <input id="loginPass" type="password" placeholder="كلمة السر"><br>
+    <button onclick="login()">دخول</button>
+    <hr>
+    <h3>تسجيل دخول الإدارة</h3>
+    <input id="adminPass" type="password" placeholder="كلمة سر الإدارة"><br>
+    <button onclick="adminLogin()">دخول الإدارة</button>
+    <hr>
+    <h3>تسجيل دخول الإدارة العليا</h3>
+    <input id="superPass" type="password" placeholder="كود الإدارة العليا"><br>
+    <button onclick="superLogin()">دخول الإدارة العليا</button>
+  </div>
 
-<div id="loginDiv">
-  <h2>🔐 تسجيل الدخول للإدارة العليا</h2>
-  <input type="password" id="adminPassword" placeholder="أدخل كلمة السر" />
-  <button onclick="adminLogin()">دخول</button>
-  <p>استخدم كلمة السر الخاصة: <b>TECNO LKL</b></p>
-</div>
-
-<div id="adminPanel" class="hidden">
-  <h2>⚙️ لوحة الإدارة العليا</h2>
-
-  <section>
-    <h3>🔍 بحث وتعديل الحسابات</h3>
-    <input type="text" id="searchAccountInput" placeholder="ابحث بالاسم أو الكود" oninput="searchAccounts()" />
-    <div id="searchResults"></div>
-  </section>
-
-  <section>
-    <h3>📈 تعديل أسعار العملات</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>العملة</th><th>السعر الحالي (G)</th><th>تعديل السعر</th>
-        </tr>
-      </thead>
-      <tbody id="priceEditTable"></tbody>
+  <!-- واجهة العميل -->
+  <div id="userDiv" class="hidden">
+    <h3>📊 حسابك</h3>
+    <div>رصيدك:</div>
+    <table id="balanceTable">
+      <tr><th>العملة</th><th>الكمية</th></tr>
     </table>
-    <button onclick="savePrices()">حفظ الأسعار</button>
-  </section>
+    <div>أسعار العملات:</div>
+    <table id="priceTable">
+      <tr><th>العملة</th><th>السعر (G)</th></tr>
+    </table>
+    <h4>سجل العمليات</h4>
+    <textarea id="userLog" readonly></textarea><br>
+    <button onclick="getUserReport()">طلب تقرير</button>
+    <button onclick="logout()">تسجيل خروج</button>
+  </div>
 
-  <section>
-    <h3>📊 تقرير شامل</h3>
-    <button onclick="showFullReport()">عرض التقرير الشامل</button>
-    <textarea id="fullReport" readonly></textarea>
-  </section>
+  <!-- واجهة الإدارة -->
+  <div id="adminDiv" class="hidden">
+    <h3>⚙️ لوحة الإدارة</h3>
+    <button onclick="showDiv('buySellDiv')">شراء / بيع</button>
+    <button onclick="showDiv('priceDiv')">تعديل الأسعار يدوياً</button>
+    <button onclick="showDiv('reportDiv')">عرض التقرير اليومي</button>
+    <button onclick="logout()">تسجيل خروج</button>
 
-  <section>
-    <h3>⏰ إعدادات وإعادة تعيين</h3>
-    <button onclick="resetAll()">إعادة تعيين التقرير وأسعار العملات</button>
-  </section>
-
-  <section>
-    <h3>➕ إضافة حساب جديد</h3>
-    <input type="text" id="newAccountName" placeholder="اسم العميل" />
-    <input type="text" id="newAccountCard" placeholder="كود البطاقة البنكية" />
-    <input type="password" id="newAccountPass" placeholder="كلمة السر" />
-    <button onclick="addAccount()">إضافة الحساب</button>
-  </section>
-
-  <section>
-    <h3>⚡️ عمليات شراء وبيع</h3>
-    <select id="accountSelect"></select>
-    <select id="cryptoSelect">
-      <option value="nano">Nano</option>
-      <option value="dash">DASH</option>
-      <option value="btc">Bitcoin</option>
-    </select>
-    <select id="operationType">
-      <option value="buy">شراء</option>
-      <option value="sell">بيع</option>
-    </select>
-    <input type="number" id="operationAmount" placeholder="الكمية" min="1" />
-    <button onclick="addOperation()">تنفيذ العملية</button>
-    <div id="lastOperation" class="hidden">
-      <p id="lastOperationText"></p>
-      <button onclick="copyLastOperation()">نسخ العملية</button>
+    <div id="buySellDiv" class="hidden">
+      <h4>شراء / بيع</h4>
+      <input id="accCode" placeholder="كود المحفظة"><br>
+      <select id="coinSelect">
+        <option value="NANO">NANO</option>
+        <option value="DASH">DASH</option>
+        <option value="BTC">BTC</option>
+      </select><br>
+      <input id="amount" type="number" placeholder="الكمية"><br>
+      <select id="typeSelect">
+        <option value="buy">شراء</option>
+        <option value="sell">بيع</option>
+      </select><br>
+      <button onclick="executeOperation()">تنفيذ العملية</button>
+      <textarea id="operationLog" readonly></textarea>
     </div>
-  </section>
 
-  <section>
-    <h3>📜 سجل العمليات</h3>
-    <textarea id="operationsLog" readonly></textarea>
-  </section>
+    <div id="priceDiv" class="hidden">
+      <h4>تعديل الأسعار يدوياً</h4>
+      <div id="manualPrices"></div>
+      <button onclick="savePrices()">حفظ الأسعار الجديدة</button>
+    </div>
 
+    <div id="reportDiv" class="hidden">
+      <h4>التقرير اليومي</h4>
+      <textarea id="dailyReport" readonly></textarea>
+    </div>
+  </div>
+
+  <!-- واجهة الإدارة العليا -->
+  <div id="superDiv" class="hidden">
+    <h3>🛡️ الإدارة العليا</h3>
+    <input id="searchAcc" placeholder="بحث بالاسم أو الكود">
+    <button onclick="searchAccount()">بحث</button>
+    <div id="editAccountDiv"></div>
+    <button onclick="generateSuperReport()">تقرير شامل</button>
+    <button onclick="resetSystem()">إعادة تعيين النظام</button>
+    <textarea id="superReport" readonly></textarea><br>
+    <button onclick="logout()">تسجيل خروج</button>
+  </div>
 </div>
 
 <script>
-  // البيانات الأساسية
-  const dailyLimits = { nano: 10, dash: 3, btc: 1 };
-  let cryptos = {
-    nano: { name: "Nano", price: 120 },
-    dash: { name: "DASH", price: 250 },
-    btc: { name: "Bitcoin", price: 1000 }
-  };
+// بيانات افتراضية
+let users = [
+  {name:"Ahmed", card:"A000A", pass:"1234", code:"Z000Z", balance:{NANO:2,DASH:1,BTC:0}, log:[]},
+];
+let prices = {NANO:1000, DASH:2000, BTC:3000};
+let dailyLog = [];
+let currentUser = null;
 
-  let accounts = [];
-  let lastAccountIndex = -1; // لتعقب آخر كود مستخدم
-
-  // إنشاء كود حساب تلقائي
-  function generateAccountCode() {
-    lastAccountIndex++;
-    let codeNum = lastAccountIndex.toString().padStart(3, '0');
-    return `Z${codeNum}Z`;
-  }
-
-  // دخول الإدارة العليا
-  function adminLogin() {
-    const pass = document.getElementById("adminPassword").value.trim();
-    if (pass === "TECNO LKL") {
-      document.getElementById("loginDiv").classList.add("hidden");
-      document.getElementById("adminPanel").classList.remove("hidden");
-      updateAccountSelect();
-      renderPriceEditTable();
-      updateOperationsLog();
-    } else {
-      alert("كلمة السر خاطئة!");
+// تحديث الجداول
+function updateTables(){
+  if(currentUser){
+    let balTable = document.getElementById("balanceTable");
+    balTable.innerHTML = "<tr><th>العملة</th><th>الكمية</th></tr>";
+    for(let c in currentUser.balance){
+      balTable.innerHTML += `<tr><td>${c}</td><td>${currentUser.balance[c]}</td></tr>`;
     }
-  }
-
-  // إضافة حساب جديد
-  function addAccount() {
-    const name = document.getElementById("newAccountName").value.trim();
-    const card = document.getElementById("newAccountCard").value.trim();
-    const pass = document.getElementById("newAccountPass").value.trim();
-    if (!name || !card || !pass) {
-      alert("يرجى تعبئة جميع الحقول");
-      return;
+    let priceTable = document.getElementById("priceTable");
+    priceTable.innerHTML = "<tr><th>العملة</th><th>السعر (G)</th></tr>";
+    for(let c in prices){
+      priceTable.innerHTML += `<tr><td>${c}</td><td>${prices[c]}</td></tr>`;
     }
-    if (accounts.some(acc => acc.name === name || acc.card === card)) {
-      alert("اسم أو كود البطاقة موجود مسبقاً");
-      return;
-    }
-    const code = generateAccountCode();
-    accounts.push({
-      code,
-      name,
-      card,
-      password: pass,
-      balances: { nano: 0, dash: 0, btc: 0 },
-      operations: []
-    });
-    alert(`تم إنشاء الحساب!\nكود الحساب: ${code}`);
-    document.getElementById("newAccountName").value = "";
-    document.getElementById("newAccountCard").value = "";
-    document.getElementById("newAccountPass").value = "";
-    updateAccountSelect();
+    document.getElementById("userLog").value = currentUser.log.join("\n");
   }
+}
 
-  // تحديث قائمة الحسابات للاختيار في العمليات
-  function updateAccountSelect() {
-    const sel = document.getElementById("accountSelect");
-    sel.innerHTML = "";
-    accounts.forEach((acc, i) => {
-      let opt = document.createElement("option");
-      opt.value = i;
-      opt.textContent = `${acc.name} - ${acc.code}`;
-      sel.appendChild(opt);
-    });
+// تسجيل الدخول
+function login(){
+  let name=document.getElementById("loginName").value;
+  let card=document.getElementById("loginCard").value;
+  let pass=document.getElementById("loginPass").value;
+  let user=users.find(u=>u.name===name && u.card===card && u.pass===pass);
+  if(user){
+    currentUser=user;
+    showOnly("userDiv");
+    updateTables();
+  } else alert("بيانات خاطئة");
+}
+
+function logout(){
+  currentUser=null;
+  showOnly("loginDiv");
+}
+
+function adminLogin(){
+  if(document.getElementById("adminPass").value==="ADMIN"){
+    showOnly("adminDiv");
+    renderManualPrices();
+  } else alert("كلمة مرور خاطئة");
+}
+
+function superLogin(){
+  if(document.getElementById("superPass").value==="TECNO LKL"){
+    showOnly("superDiv");
+  } else alert("رمز خاطئ");
+}
+
+// إظهار واجهة محددة
+function showOnly(id){
+  document.querySelectorAll(".container > div").forEach(div=>div.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+// إظهار جزء في الإدارة
+function showDiv(id){
+  document.querySelectorAll("#adminDiv > div").forEach(div=>div.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+// تنفيذ الشراء والبيع
+function executeOperation(){
+  let code=document.getElementById("accCode").value;
+  let coin=document.getElementById("coinSelect").value;
+  let amount=parseInt(document.getElementById("amount").value);
+  let type=document.getElementById("typeSelect").value;
+  let user=users.find(u=>u.code===code);
+  if(!user || !amount) return alert("خطأ في البيانات");
+  let price=prices[coin]*amount;
+  if(type==="buy"){
+    user.balance[coin]+=amount;
+    prices[coin]=Math.round(prices[coin]*1.2); // يزيد 20%
+    user.log.push(`شراء ${amount} ${coin} بسعر ${price}G`);
+    dailyLog.push(`شراء:${code}-${coin}-${amount}`);
+  }else{
+    if(user.balance[coin]<amount) return alert("رصيد غير كافٍ");
+    user.balance[coin]-=amount;
+    prices[coin]=Math.round(prices[coin]*0.85); // ينقص 15%
+    user.log.push(`بيع ${amount} ${coin} بسعر ${price}G`);
+    dailyLog.push(`بيع:${code}-${coin}-${amount}`);
   }
+  document.getElementById("operationLog").value=`خصم من البطاقة ${user.card}\n${price}G\n${type==="buy"?"اشترى":"باع"} ${amount}${coin[0]}\nكود المحفظة ${user.code}`;
+  updateTables();
+}
 
-  // تنفيذ عملية شراء أو بيع
-  function addOperation() {
-    clearLastOperation();
-
-    const accIndex = +document.getElementById("accountSelect").value;
-    const cryptoKey = document.getElementById("cryptoSelect").value;
-    const opType = document.getElementById("operationType").value;
-    const amount = +document.getElementById("operationAmount").value;
-
-    if (accIndex < 0 || !accounts[accIndex]) {
-      alert("اختر حساب صحيح");
-      return;
-    }
-    if (!amount || amount <= 0) {
-      alert("ادخل كمية صحيحة");
-      return;
-    }
-
-    const acc = accounts[accIndex];
-    // تحقق من الحد اليومي للشراء فقط
-    if (opType === "buy") {
-      const boughtToday = acc.operations.filter(op => op.crypto === cryptoKey && op.type === "buy").reduce((a,v) => a + v.amount, 0);
-      if (boughtToday + amount > dailyLimits[cryptoKey]) {
-        alert(`تجاوز الحد اليومي للشراء للعملة ${cryptos[cryptoKey].name}`);
-        return;
-      }
-    }
-
-    // حساب السعر الجديد بعد العملية
-    let priceBefore = cryptos[cryptoKey].price;
-    let priceAfter;
-    if (opType === "buy") {
-      // السعر يزيد 20% لكل وحدة تم شراؤها
-      priceAfter = priceBefore * (1 + 0.20 * amount);
-      acc.balances[cryptoKey] += amount;
-    } else {
-      // بيع لا يوجد حد يومي لكن لا يمكن بيع أكثر من الموجود
-      if (acc.balances[cryptoKey] < amount) {
-        alert("الكمية المراد بيعها أكبر من الرصيد المتوفر");
-        return;
-      }
-      priceAfter = priceBefore * (1 - 0.15 * amount);
-      acc.balances[cryptoKey] -= amount;
-    }
-text += `${opName} ${amount} ${cryptos[cryptoKey].name}\n`;
-    text += `الخصم من البطاقة ${cardCode}\n`;
-    text += `${(cryptos[cryptoKey].price * amount).toFixed(2)}G`;
-
-    textEl.textContent = text;
-    lastOpDiv.classList.remove("hidden");
-
-    // حفظ النص الأخير للنسخ
-    lastOperationCopy = text;
+// تعديل الأسعار اليدوي
+function renderManualPrices(){
+  let div=document.getElementById("manualPrices");
+  div.innerHTML="";
+  for(let c in prices){
+    div.innerHTML+=`${c}: <input id="price_${c}" value="${prices[c]}"><br>`;
   }
+}
 
-  function clearLastOperation() {
-    document.getElementById("lastOperation").classList.add("hidden");
-    document.getElementById("lastOperationText").textContent = "";
-    lastOperationCopy = "";
+function savePrices(){
+  for(let c in prices){
+    let val=parseInt(document.getElementById(`price_${c}`).value);
+    if(!isNaN(val)) prices[c]=val;
   }
+  alert("تم تحديث الأسعار");
+  updateTables();
+}
 
-  let lastOperationCopy = "";
-  function copyLastOperation() {
-    if (lastOperationCopy) {
-      navigator.clipboard.writeText(lastOperationCopy).then(() => {
-        alert("تم نسخ العملية إلى الحافظة!");
-      });
-    }
+// تقرير يومي
+function getUserReport(){
+  alert(currentUser.log.join("\n") || "لا يوجد عمليات");
+}
+
+function showDailyReport(){
+  document.getElementById("dailyReport").value=dailyLog.join("\n")||"لا يوجد عمليات اليوم";
+}
+
+// الإدارة العليا
+function searchAccount(){
+  let val=document.getElementById("searchAcc").value;
+  let user=users.find(u=>u.name===val||u.code===val);
+  let div=document.getElementById("editAccountDiv");
+  if(user){
+    div.innerHTML=`<b>${user.name} (${user.code})</b><br>
+    NANO:<input id="editN" value="${user.balance.NANO}">
+    DASH:<input id="editD" value="${user.balance.DASH}">
+    BTC:<input id="editB" value="${user.balance.BTC}">
+    <button onclick="saveAccount('${user.code}')">حفظ</button>`;
+  }else div.innerHTML="لم يتم العثور على الحساب";
+}
+
+function saveAccount(code){
+  let user=users.find(u=>u.code===code);
+  user.balance.NANO=parseInt(document.getElementById("editN").value);
+  user.balance.DASH=parseInt(document.getElementById("editD").value);
+  user.balance.BTC=parseInt(document.getElementById("editB").value);
+  alert("تم الحفظ");
+  updateTables();
+}
+
+function generateSuperReport(){
+  let txt=`عدد الحسابات: ${users.length}\nإجمالي العمليات: ${dailyLog.length}\n`;
+  txt+=dailyLog.join("\n");
+  document.getElementById("superReport").value=txt;
+}
+
+function resetSystem(){
+  dailyLog=[];
+  alert("تمت إعادة تعيين التقرير اليومي");
+}
+
+// تغيير تلقائي للأسعار كل ساعة (هنا للتجربة كل دقيقة)
+setInterval(()=>{
+  for(let c in prices){
+    let up=Math.random()>0.5;
+    prices[c]=Math.round(prices[c]*(up?1.2:0.85));
   }
-
-  // تحديث جدول تعديل الأسعار
-  function renderPriceEditTable() {
-    const tbody = document.getElementById("priceEditTable");
-    tbody.innerHTML = "";
-    for (let key in cryptos) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${cryptos[key].name}</td>
-        <td>${cryptos[key].price.toFixed(2)}G</td>
-        <td><input type="number" id="price_${key}" value="${cryptos[key].price.toFixed(2)}" step="0.01" /></td>
-      `;
-      tbody.appendChild(tr);
-    }
-  }
-
-  // حفظ الأسعار المعدلة
-  function savePrices() {
-    for (let key in cryptos) {
-      const val = parseFloat(document.getElementById("price_" + key).value);
-      if (!isNaN(val) && val > 0) {
-        cryptos[key].price = val;
-      }
-    }
-    alert("تم حفظ الأسعار الجديدة!");
-    renderPriceEditTable();
-  }
-
-  // تحديث سجل العمليات
-  function updateOperationsLog() {
-    const logArea = document.getElementById("operationsLog");
-    let logs = [];
-    accounts.forEach(acc => {
-      acc.operations.forEach(op => {
-        logs.push(
-          `${acc.code} | ${op.type.toUpperCase()} ${op.amount} ${cryptos[op.crypto].name} | ` +
-          `قبل: ${op.priceBefore.toFixed(2)}G بعد: ${op.priceAfter.toFixed(2)}G | ${op.timestamp.toLocaleString()}`
-        );
-      });
-    });
-    logArea.value = logs.join("\n");
-  }
-
-  // البحث عن الحسابات
-  function searchAccounts() {
-    const term = document.getElementById("searchAccountInput").value.toLowerCase();
-    const resultsDiv = document.getElementById("searchResults");
-    resultsDiv.innerHTML = "";
-
-    const results = accounts.filter(acc =>
-      acc.name.toLowerCase().includes(term) || acc.code.toLowerCase().includes(term)
-    );
-
-    if (results.length === 0) {
-      resultsDiv.innerHTML = "<p>لا توجد نتائج.</p>";
-      return;
-    }
-
-    results.forEach(acc => {
-      const div = document.createElement("div");
-      div.style.border = "1px solid #ffcc00";
-      div.style.padding = "10px";
-      div.style.margin = "6px";
-      div.innerHTML = `
-        <b>${acc.name} (${acc.code})</b><br/>
-        البطاقة: ${acc.card}<br/>
-        Nano: ${acc.balances.nano} | DASH: ${acc.balances.dash} | BTC: ${acc.balances.btc}<br/>
-        <button onclick="requestReport('${acc.code}')">تقرير الحساب</button>
-      `;
-      resultsDiv.appendChild(div);
-    });
-  }
-
-  // طلب تقرير حساب محدد
-  function requestReport(code) {
-    const acc = accounts.find(a => a.code === code);
-    if (!acc) return alert("الحساب غير موجود");
-
-    let report = `تقرير حساب: ${acc.name} (${acc.code})\n`;
-    report += `البطاقة: ${acc.card}\n\n`;
-    report += `الأرصدة:\nNano: ${acc.balances.nano}\nDASH: ${acc.balances.dash}\nBTC: ${acc.balances.btc}\n\n`;
-    report += "العمليات:\n";
-    acc.operations.forEach(op => {
-      report += `${op.type.toUpperCase()} ${op.amount} ${cryptos[op.crypto].name} بسعر ${op.priceBefore.toFixed(2)}G (${op.timestamp.toLocaleString()})\n`;
-    });
-
-    alert(report);
-  }
-
-  // تقرير شامل لكل الحسابات
-  function showFullReport() {
-    let totalAccounts = accounts.length;
-    let totalBuys = 0;
-    let totalSells = 0;
-    let report = `📊 تقرير شامل للنظام:\nعدد الحسابات: ${totalAccounts}\n\n`;
-
-    accounts.forEach(acc => {
-      acc.operations.forEach(op => {
-        if (op.type === "buy") totalBuys++;
-        if (op.type === "sell") totalSells++;
-      });
-    });
-
-    report += `إجمالي عمليات الشراء: ${totalBuys}\nإجمالي عمليات البيع: ${totalSells}\n\n`;
-
-    accounts.forEach(acc => {
-      report += `- ${acc.code} (${acc.name}): Nano ${acc.balances.nano}, DASH ${acc.balances.dash}, BTC ${acc.balances.btc}\n`;
-    });
-
-    document.getElementById("fullReport").value = report;
-  }
-
-  // إعادة تعيين التقرير وأسعار العملات
-  function resetAll() {
-    accounts.forEach(acc => {
-      acc.operations = [];
-    });
-    cryptos.nano.price = 120;
-    cryptos.dash.price = 250;
-    cryptos.btc.price = 1000;
-    updateOperationsLog();
-    renderPriceEditTable();
-    document.getElementById("fullReport").value = "";
-    alert("تمت إعادة تعيين التقرير والأسعار!");
-  }
+  updateTables();
+},60000);
 </script>
 </body>
 </html>
