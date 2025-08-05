@@ -1,249 +1,283 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نظام المحافظ والعملات</title>
+<title>نظام المحافظ الرقمية</title>
 <style>
     body {
         background-color: #121212;
-        color: #FFD700;
-        font-family: Tahoma, sans-serif;
+        color: #fff;
+        font-family: "Tahoma", sans-serif;
         text-align: center;
+        margin: 0;
+        padding: 0;
     }
-    h1,h2,h3 { color: #FFD700; }
+    header {
+        background-color: #1e1e1e;
+        padding: 20px;
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #ffd700;
+    }
+    main {
+        padding: 20px;
+    }
+    .section {
+        background-color: #1e1e1e;
+        margin: 20px auto;
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 700px;
+        box-shadow: 0 0 10px #000;
+    }
+    h2 {
+        color: #ffd700;
+    }
     input, button, select {
-        padding: 10px;
         margin: 5px;
+        padding: 10px;
         border-radius: 5px;
         border: none;
-        outline: none;
+    }
+    input, select {
+        width: 60%;
+    }
+    button {
+        background-color: #ffd700;
+        color: #000;
+        cursor: pointer;
         font-weight: bold;
     }
-    input { width: 200px; }
-    button {
-        background-color: #FFD700;
-        color: #121212;
-        cursor: pointer;
+    button:hover {
+        background-color: #e6c200;
     }
-    button:hover { background-color: #ffcc00; }
-    .hidden { display: none; }
-    .section { border: 1px solid #FFD700; padding: 20px; margin: 20px; border-radius: 10px; }
-    table { width: 80%; margin: auto; border-collapse: collapse; }
-    th, td { border: 1px solid #FFD700; padding: 8px; }
+    .currency-list {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+    }
+    .currency {
+        background-color: #222;
+        padding: 15px;
+        border-radius: 10px;
+        min-width: 120px;
+    }
+    .currency h3 {
+        margin: 0;
+        color: #ffd700;
+    }
+    .hidden {
+        display: none;
+    }
 </style>
 </head>
 <body>
 
-<h1>🔹 نظام المحافظ والعملات 🔹</h1>
+<header>💰 نظام المحافظ الرقمية - وضع داكن</header>
 
-<!-- تسجيل الدخول -->
-<div id="login-section" class="section">
-    <h2>تسجيل الدخول</h2>
-    <input id="loginName" placeholder="اسم المستخدم"><br>
-    <input id="loginBank" placeholder="كود البطاقة البنكية"><br>
-    <input id="loginWallet" placeholder="كود المحفظة"><br>
-    <input id="loginPass" type="password" placeholder="كلمة السر"><br>
-    <button onclick="login()">دخول</button>
-</div>
+<main>
 
-<!-- واجهة المستخدم -->
-<div id="user-section" class="section hidden">
-    <h2>مرحبا بك <span id="userName"></span></h2>
-    <p>كود البطاقة البنكية: <span id="userBank"></span></p>
-    <p>كود المحفظة: <span id="userWallet"></span></p>
-    <h3>أرصدة العملات</h3>
-    <div id="userBalances"></div>
-    <h3>سجل العمليات</h3>
-    <div id="userHistory"></div>
-    <button onclick="logout()">تسجيل الخروج</button>
-</div>
+    <!-- عرض الأسعار العامة -->
+    <div class="section" id="public-prices">
+        <h2>أسعار العملات الحالية</h2>
+        <div class="currency-list" id="currency-prices">
+            <!-- سيتم تعبئة الأسعار هنا -->
+        </div>
+    </div>
 
-<!-- الإدارة العادية -->
-<div id="admin-section" class="section hidden">
-    <h2>الإدارة العادية</h2>
-    <h3>إضافة محفظة</h3>
-    <input id="newName" placeholder="اسم المستخدم"><br>
-    <input id="newBank" placeholder="كود البطاقة البنكية"><br>
-    <input id="newPass" type="password" placeholder="كلمة السر"><br>
-    <button onclick="createWallet()">إنشاء المحفظة</button>
-    <h3>شراء/بيع</h3>
-    <input id="opUser" placeholder="اسم المستخدم"><br>
-    <select id="opType">
-        <option value="buy">شراء</option>
-        <option value="sell">بيع</option>
-    </select>
-    <select id="opCoin">
-        <option value="N">Nano</option>
-        <option value="D">Dash</option>
-        <option value="B">Bitcoin</option>
-    </select>
-    <input id="opAmount" type="number" placeholder="الكمية"><br>
-    <button onclick="doOperation()">تنفيذ العملية</button>
-    <div id="opResult"></div>
-    <button onclick="logout()">تسجيل الخروج</button>
-</div>
+    <!-- تسجيل الدخول -->
+    <div class="section" id="login-section">
+        <h2>تسجيل الدخول</h2>
+        <input type="text" id="login-username" placeholder="اسم المستخدم"><br>
+        <input type="text" id="login-card" placeholder="كود البطاقة البنكية"><br>
+        <input type="text" id="login-wallet" placeholder="كود المحفظة"><br>
+        <input type="password" id="login-password" placeholder="كلمة السر"><br>
+        <button onclick="login()">دخول</button>
+    </div>
 
-<!-- الإدارة العليا -->
-<div id="superadmin-section" class="section hidden">
-    <h2>الإدارة العليا</h2>
-    <h3>بحث وتعديل الحسابات</h3>
-    <input id="searchUser" placeholder="اسم المستخدم">
-    <button onclick="searchAccount()">بحث</button>
-    <div id="accountInfo"></div>
+    <!-- واجهة المستخدم -->
+    <div class="section hidden" id="user-dashboard">
+        <h2>لوحة المستخدم</h2>
+        <p>👤 اسم المستخدم: <span id="ud-name"></span></p>
+        <p>💳 كود البطاقة: <span id="ud-card"></span></p>
+        <p>💼 كود المحفظة: <span id="ud-wallet"></span></p>
+        <h3>أرصدة العملات:</h3>
+        <div id="user-balances"></div>
+        <h3>السجل:</h3>
+        <pre id="user-log"></pre>
+    </div>
 
-    <h3>تعديل أسعار العملات يدويا</h3>
-    <div id="priceEditor"></div>
+    <!-- الإدارة العادية -->
+    <div class="section hidden" id="admin-dashboard">
+        <h2>الإدارة العادية</h2>
+        <h3>إضافة محفظة جديدة</h3>
+        <input type="text" id="new-username" placeholder="اسم المستخدم"><br>
+        <input type="text" id="new-card" placeholder="كود البطاقة البنكية"><br>
+        <input type="password" id="new-password" placeholder="كلمة السر"><br>
+        <button onclick="createWallet()">إنشاء المحفظة</button>
 
-    <h3>تقرير شامل</h3>
-    <div id="fullReport"></div>
-    <button onclick="generateFullReport()">عرض التقرير</button>
-    <button onclick="resetReport()">إعادة تعيين التقرير</button><br><br>
+        <h3>عملية شراء</h3>
+        <input type="text" id="buy-wallet" placeholder="كود المحفظة"><br>
+        <select id="buy-currency">
+            <option value="BTC">بتكوين</option>
+            <option value="DASH">داش</option>
+            <option value="NANO">نانو</option>
+        </select>
+        <input type="number" id="buy-amount" placeholder="الكمية"><br>
+        <button onclick="buyCurrency()">شراء</button>
 
-    <button onclick="logout()">تسجيل الخروج</button>
-</div>
+        <h3>عملية بيع</h3>
+        <input type="text" id="sell-wallet" placeholder="كود المحفظة"><br>
+        <select id="sell-currency">
+            <option value="BTC">بتكوين</option>
+            <option value="DASH">داش</option>
+            <option value="NANO">نانو</option>
+        </select>
+        <input type="number" id="sell-amount" placeholder="الكمية"><br>
+        <button onclick="sellCurrency()">بيع</button>
+    </div>
+
+    <!-- الإدارة العليا -->
+    <div class="section hidden" id="super-admin-dashboard">
+        <h2>الإدارة العليا</h2>
+        <h3>بحث عن حساب</h3>
+        <input type="text" id="search-account" placeholder="اسم المستخدم أو كود المحفظة"><br>
+        <button onclick="searchAccount()">بحث</button>
+        <pre id="search-result"></pre>
+
+        <h3>تعديل الأسعار يدويًا</h3>
+        <div id="manual-prices"></div>
+        <button onclick="updatePricesManually()">تحديث الأسعار</button>
+
+        <h3>تقرير شامل</h3>
+        <button onclick="generateReport()">عرض التقرير</button>
+        <pre id="full-report"></pre>
+    </div>
+
+</main>
 
 <script>
-let users = []; 
+/* بيانات النظام */
+let currencies = {
+    BTC: 1000,
+    DASH: 500,
+    NANO: 300
+};
+let users = {};
 let transactions = [];
-let prices = { N: 1000, D: 5000, B: 20000 };
-let report = { buys: 0, sells: 0, accounts: 0 };
-let currentUser = null;
-let priceInterval = 45*60*1000; // 45 دقيقة
+let walletCounter = 0;
 
+/* تحديث الأسعار العامة */
+function updateCurrencyDisplay() {
+    const container = document.getElementById('currency-prices');
+    container.innerHTML = '';
+    for (const [cur, price] of Object.entries(currencies)) {
+        const div = document.createElement('div');
+        div.className = 'currency';
+        div.innerHTML = `<h3>${cur}</h3><p>${price} G</p>`;
+        container.appendChild(div);
+    }
+}
+
+/* تسجيل الدخول */
 function login() {
-    const name = document.getElementById("loginName").value;
-    const bank = document.getElementById("loginBank").value;
-    const wallet = document.getElementById("loginWallet").value;
-    const pass = document.getElementById("loginPass").value;
+    const username = document.getElementById('login-username').value;
+    const card = document.getElementById('login-card').value;
+    const wallet = document.getElementById('login-wallet').value;
+    const pass = document.getElementById('login-password').value;
 
-    // إدارة عليا
-    if(pass === "TECNO XXX") {
-        document.getElementById("login-section").classList.add("hidden");
-        document.getElementById("superadmin-section").classList.remove("hidden");
-        updatePriceEditor();
-        return;
+    if (username === 'Admin' && card === 'XXXX') {
+        if (pass === 'TECNO LD7') {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+            return;
+        } else if (pass === 'TECNO XXX') {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('super-admin-dashboard').classList.remove('hidden');
+            updateManualPrices();
+            return;
+        }
     }
-    // إدارة عادية
-    if(pass === "TECNO LD7") {
-        document.getElementById("login-section").classList.add("hidden");
-        document.getElementById("admin-section").classList.remove("hidden");
-        return;
-    }
 
-    // مستخدم عادي
-    let u = users.find(x=>x.name===name && x.bank===bank && x.wallet===wallet && x.pass===pass);
-    if(u) {
-        currentUser = u;
-        document.getElementById("login-section").classList.add("hidden");
-        document.getElementById("user-section").classList.remove("hidden");
-        document.getElementById("userName").innerText = u.name;
-        document.getElementById("userBank").innerText = u.bank;
-        document.getElementById("userWallet").innerText = u.wallet;
-        updateUserInfo();
-    } else alert("بيانات تسجيل الدخول غير صحيحة");
-}
+    const user = Object.values(users).find(u => 
+        u.username === username && u.card === card && u.wallet === wallet && u.password === pass
+    );
 
-function logout(){
-    document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));
-    document.getElementById("login-section").classList.remove("hidden");
-}
-
-function createWallet() {
-    let name=document.getElementById("newName").value;
-    let bank=document.getElementById("newBank").value;
-    let pass=document.getElementById("newPass").value;
-    if(users.find(u=>u.bank===bank)) return alert("هذه البطاقة مستخدمة بالفعل!");
-    let wallet="Z"+String(users.length).padStart(3,"0")+"Z";
-    users.push({name,bank,pass,wallet,balances:{N:0,D:0,B:0},history:[]});
-    report.accounts++;
-    alert("تم إنشاء المحفظة بكود: "+wallet);
-}
-
-function doOperation(){
-    let name=document.getElementById("opUser").value;
-    let u=users.find(x=>x.name===name);
-    if(!u) return alert("المستخدم غير موجود");
-    let type=document.getElementById("opType").value;
-    let coin=document.getElementById("opCoin").value;
-    let amt=parseInt(document.getElementById("opAmount").value);
-    if(amt<=0) return;
-    let price = prices[coin]*amt;
-    if(type==="buy"){
-        u.balances[coin]+=amt;
-        report.buys++;
-        transactions.push(`${u.name} اشترى ${amt}${coin} بسعر ${price}`);
+    if (user) {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('user-dashboard').classList.remove('hidden');
+        document.getElementById('ud-name').textContent = user.username;
+        document.getElementById('ud-card').textContent = user.card;
+        document.getElementById('ud-wallet').textContent = user.wallet;
+        updateUserDashboard(user.wallet);
     } else {
-        if(u.balances[coin]<amt) return alert("رصيد غير كافي");
-        u.balances[coin]-=amt;
-        report.sells++;
-        transactions.push(`${u.name} باع ${amt}${coin} بسعر ${price}`);
+        alert('بيانات الدخول غير صحيحة');
     }
-    u.history.push(transactions[transactions.length-1]);
-    document.getElementById("opResult").innerText=transactions[transactions.length-1];
-
-    // تغيير السعر بعد العملية
-    changePricesAfterOperation();
-    updateUserInfo();
 }
 
-function updateUserInfo(){
-    if(!currentUser) return;
-    let bal=currentUser.balances;
-    document.getElementById("userBalances").innerHTML=
-        `Nano: ${bal.N}<br>Dash: ${bal.D}<br>Bitcoin: ${bal.B}`;
-    document.getElementById("userHistory").innerHTML=currentUser.history.slice(-5).join("<br>");
+/* إنشاء محفظة */
+function createWallet() {
+    const username = document.getElementById('new-username').value;
+    const card = document.getElementById('new-card').value;
+    const password = document.getElementById('new-password').value;
+
+    walletCounter++;
+    const wallet = 'Z' + walletCounter.toString().padStart(3, '0') + 'Z';
+
+    users[wallet] = {
+        username,
+        card,
+        password,
+        wallet,
+        balances: { BTC: 0, DASH: 0, NANO: 0 },
+        log: []
+    };
+
+    alert(`تم إنشاء المحفظة: ${wallet}`);
 }
 
-function changePricesAfterOperation(){
-    for(let c in prices){
-        let r=Math.random();
-        if(r>0.5) prices[c]*=1.2;
-        else prices[c]*=0.85;
-        prices[c]=Math.round(prices[c]);
+/* تحديث واجهة المستخدم */
+function updateUserDashboard(wallet) {
+    const user = users[wallet];
+    const balances = user.balances;
+    const div = document.getElementById('user-balances');
+    div.innerHTML = '';
+    for (const [cur, amt] of Object.entries(balances)) {
+        div.innerHTML += `<p>${cur}: ${amt}</p>`;
     }
-    updatePriceEditor();
+    document.getElementById('user-log').textContent = user.log.join('\n');
 }
 
-function updatePriceEditor(){
-    document.getElementById("priceEditor").innerHTML=
-        Object.entries(prices).map(([k,v])=>
-        `${k}: <input value="${v}" onchange="prices['${k}']=parseInt(this.value)">`).join("<br>");
+/* تحديث الأسعار يدويًا */
+function updateManualPrices() {
+    const container = document.getElementById('manual-prices');
+    container.innerHTML = '';
+    for (const [cur, price] of Object.entries(currencies)) {
+        container.innerHTML += `<input type="number" id="price-${cur}" value="${price}"> ${cur}<br>`;
+    }
+}
+function updatePricesManually() {
+    for (const cur of Object.keys(currencies)) {
+        const val = parseFloat(document.getElementById(`price-${cur}`).value);
+        if (!isNaN(val)) currencies[cur] = val;
+    }
+    updateCurrencyDisplay();
+    alert('تم تحديث الأسعار يدويًا');
 }
 
-function searchAccount(){
-    let name=document.getElementById("searchUser").value;
-    let u=users.find(x=>x.name===name);
-    if(!u) return alert("لم يتم العثور على الحساب");
-    document.getElementById("accountInfo").innerHTML=
-        `الاسم: ${u.name}<br>البنك: ${u.bank}<br>المحفظة: ${u.wallet}<br>
-         Nano:${u.balances.N} Dash:${u.balances.D} Bitcoin:${u.balances.B}<br>
-         <button onclick="deleteAccount('${u.name}')">حذف الحساب</button>`;
+/* توليد التقرير */
+function generateReport() {
+    let report = '📊 تقرير شامل:\n';
+    report += `إجمالي الحسابات: ${Object.keys(users).length}\n`;
+    report += `إجمالي العمليات: ${transactions.length}\n`;
+    report += 'قائمة العمليات:\n';
+    report += transactions.join('\n');
+    document.getElementById('full-report').textContent = report;
 }
 
-function deleteAccount(name){
-    users=users.filter(x=>x.name!==name);
-    alert("تم حذف الحساب");
-    document.getElementById("accountInfo").innerHTML="";
-}
-
-function generateFullReport(){
-    document.getElementById("fullReport").innerHTML=
-        `عدد الحسابات: ${report.accounts}<br>
-         عدد الشراء: ${report.buys}<br>
-         عدد البيع: ${report.sells}<br>
-         العمليات:<br>${transactions.join("<br>")}`;
-}
-
-function resetReport(){
-    report={buys:0,sells:0,accounts:users.length};
-    transactions=[];
-    alert("تمت إعادة تعيين التقرير");
-}
-
-// تغيير الأسعار كل 45 دقيقة
-setInterval(changePricesAfterOperation,priceInterval);
-
+/* تحديث الأسعار العامة مبدئيًا */
+updateCurrencyDisplay();
 </script>
 </body>
 </html>
